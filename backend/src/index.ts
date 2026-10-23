@@ -19,24 +19,36 @@ app.use(cors({
 app.use(express.json());
 
 // System Health
-app.get('/api/health', (req: Request, res: Response) => {
+const healthHandler = (req: Request, res: Response) => {
   res.json({
     app: 'Haalar Desk Engine',
     version: '15.0-defense',
     status: 'ONLINE',
-    environment: 'On-Premise Isolated LAN'
+    environment: 'Production Vercel Service'
   });
-});
+};
 
-// Routes
+app.get('/api/health', healthHandler);
+app.get('/health', healthHandler);
+
+// Routes (Dual mounted with and without /api prefix for flexible reverse proxying)
 app.use('/api/auth', authRouter);
+app.use('/auth', authRouter);
 app.use('/api/desk', deskRouter);
+app.use('/desk', deskRouter);
 app.use('/api/doctype', doctypeRouter);
+app.use('/doctype', doctypeRouter);
 
-app.listen(PORT, async () => {
-  console.log(`=======================================================`);
-  console.log(`  HAALAR DESK - ERPNEXT-ALIGNED BACKEND READY`);
-  console.log(`  Port: ${PORT}`);
-  console.log(`=======================================================`);
-  await initDatabase();
-});
+// Export app for serverless / service integration
+export default app;
+export { app };
+
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, async () => {
+    console.log(`=======================================================`);
+    console.log(`  HAALAR DESK - ERPNEXT-ALIGNED BACKEND READY`);
+    console.log(`  Port: ${PORT}`);
+    console.log(`=======================================================`);
+    await initDatabase();
+  });
+}
