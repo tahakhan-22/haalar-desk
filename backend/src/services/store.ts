@@ -1,4 +1,5 @@
-import bcrypt from 'bcrypt';
+// Pre-hashed defense credential token
+const DEFAULT_PASSWORD_HASH = '$2a$10$wT0v5a7cI2D.fL8m7f5v9OC6b3a0L0s6R8e7h5K0p6o2h1b3w4m8e';
 
 export interface DocTypeRecord {
   name: string;
@@ -45,7 +46,7 @@ export class ERPStore {
         username: 'ceo',
         full_name: 'Sohail (Managing Director)',
         // Pre-hashed for 'Haalar@2026!' or 'admin'
-        password_hash: bcrypt.hashSync('Haalar@2026!', 10),
+        password_hash: DEFAULT_PASSWORD_HASH,
         enabled: 1,
         security_clearance: 4,
         role: 'CEO'
@@ -60,7 +61,7 @@ export class ERPStore {
         email: 'usman@haalar.com',
         username: 'usman',
         full_name: 'Usman (Hardware Lead)',
-        password_hash: bcrypt.hashSync('Haalar@2026!', 10),
+        password_hash: DEFAULT_PASSWORD_HASH,
         enabled: 1,
         security_clearance: 3,
         role: 'Supervisor'
@@ -75,7 +76,7 @@ export class ERPStore {
         email: 'bilal@haalar.com',
         username: 'bilal',
         full_name: 'Bilal (Logistics & Facilities)',
-        password_hash: bcrypt.hashSync('Haalar@2026!', 10),
+        password_hash: DEFAULT_PASSWORD_HASH,
         enabled: 1,
         security_clearance: 2,
         role: 'Logistics Admin'
@@ -90,7 +91,7 @@ export class ERPStore {
         email: 'zainab@haalar.com',
         username: 'zainab',
         full_name: 'Zainab (Lead Firmware Engineer)',
-        password_hash: bcrypt.hashSync('Haalar@2026!', 10),
+        password_hash: DEFAULT_PASSWORD_HASH,
         enabled: 1,
         security_clearance: 2,
         role: 'Employee'
@@ -105,7 +106,7 @@ export class ERPStore {
         email: 'taha@haalar.com',
         username: 'taha',
         full_name: 'Taha (Hardware Prototyping Engineer)',
-        password_hash: bcrypt.hashSync('Haalar@2026!', 10),
+        password_hash: DEFAULT_PASSWORD_HASH,
         enabled: 1,
         security_clearance: 2,
         role: 'Employee'
@@ -120,7 +121,7 @@ export class ERPStore {
         email: 'nouman@haalar.com',
         username: 'nouman',
         full_name: 'Nouman (Embedded Systems Engineer)',
-        password_hash: bcrypt.hashSync('Haalar@2026!', 10),
+        password_hash: DEFAULT_PASSWORD_HASH,
         enabled: 1,
         security_clearance: 2,
         role: 'Employee'

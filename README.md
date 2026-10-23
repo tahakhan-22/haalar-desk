@@ -57,21 +57,26 @@ Visit `http://localhost:3000` in your browser.
 
 ---
 
-## ☁️ Deploying to Vercel
+## ☁️ Deploying to Vercel (Full-Stack Frontend + Backend in 1-Click)
+
+Haalar Desk is configured with **unified full-stack Vercel deployment**:
+* **Frontend**: React 19 SPA built via Vite to `frontend/dist`.
+* **Backend API**: Serverless Express engine in `api/index.js` handling `/api/auth`, `/api/desk`, and `/api/doctype`.
 
 ### Step 1: Import Repository
 1. Log in to [Vercel](https://vercel.com) and click **"Add New..."** $\to$ **"Project"**.
-2. Select your imported GitHub repository: `haalar-desk`.
+2. Select your imported GitHub repository: **`tahakhan-22/haalar-desk`**.
 
-### Step 2: Configure Project Settings
-* **Framework Preset**: `Vite`
-* **Root Directory**: `frontend` *(Click Edit and select the `frontend` folder)*
-* **Build Command**: `npm run build`
-* **Output Directory**: `dist`
-* **Install Command**: `npm install`
+### Step 2: Leave All Settings as Default
+Because `vercel.json` and the root `package.json` are pre-configured:
+* **Root Directory**: `./` (Default root)
+* **Build Command**: `cd frontend && npm install && npm run build` (Pre-configured)
+* **Output Directory**: `frontend/dist` (Pre-configured)
 
-### Step 3: Environment Variables (Optional)
-If your backend is hosted separately on Render, Railway, or an on-premise IP:
-* `VITE_API_BASE_URL`: `https://your-backend-api-url.com` *(leave empty if deploying with local proxy)*
-
-Click **Deploy** and your live link will be generated!
+### Step 3: Click Deploy
+Click **Deploy**. Both the user interface and the live API engine will deploy simultaneously on Vercel under one domain!
+Log in immediately using:
+* **CEO**: `ceo` / `Haalar@2026!`
+* **Supervisor**: `usman` / `Haalar@2026!`
+* **Logistics**: `bilal` / `Haalar@2026!`
+* **Engineers**: `zainab`, `taha`, `nouman` / `Haalar@2026!`
