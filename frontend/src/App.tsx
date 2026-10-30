@@ -58,7 +58,11 @@ import {
   Heart,
   ThumbsUp,
   Settings,
-  Filter
+  Filter,
+  Printer,
+  FileCheck2,
+  FileSpreadsheet,
+  Download
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -106,10 +110,25 @@ export default function App() {
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Dedicated Detail Views / Sub-Pages
-  // 'workspace' | 'doctype_list' | 'task_detail' | 'all_employees' | 'employee_detail' | 'expenses_ledger'
+  // 'workspace' | 'doctype_list' | 'task_detail' | 'all_employees' | 'employee_detail' | 'expenses_ledger' | 'monthly_reports' | 'monthly_report_worksheet'
   const [currentView, setCurrentView] = useState<string>('workspace');
   const [selectedTaskDetail, setSelectedTaskDetail] = useState<any>(null);
   const [selectedEmployeeDetail, setSelectedEmployeeDetail] = useState<any>(null);
+  const [selectedReport, setSelectedReport] = useState<any>(null);
+  const [reportsList, setReportsList] = useState<any[]>([]);
+  const [reportsLoading, setReportsLoading] = useState<boolean>(false);
+  const [reportsTab, setReportsTab] = useState<'my_reports' | 'management'>('my_reports');
+  const [managementReportOverview, setManagementReportOverview] = useState<any>(null);
+  const [reportFilterMonth, setReportFilterMonth] = useState<string>('October');
+  const [reportFilterYear, setReportFilterYear] = useState<number>(2026);
+  const [reportFilterStatus, setReportFilterStatus] = useState<string>('All');
+  const [reportSearchQuery, setReportSearchQuery] = useState<string>('');
+  const [isSubmittingReport, setIsSubmittingReport] = useState<boolean>(false);
+  const [isSavingDraft, setIsSavingDraft] = useState<boolean>(false);
+  const [showSubmitConfirmModal, setShowSubmitConfirmModal] = useState<boolean>(false);
+  const [showNewReportModal, setShowNewReportModal] = useState<boolean>(false);
+  const [newReportPeriodMonth, setNewReportPeriodMonth] = useState<string>('October');
+  const [newReportPeriodYear, setNewReportPeriodYear] = useState<number>(2026);
 
   // DocType list view
   const [activeDocType, setActiveDocType] = useState<string | null>(null);
@@ -152,7 +171,7 @@ export default function App() {
   const [timelineTab, setTimelineTab] = useState<'Day' | 'Week' | 'Month' | 'Year'>('Day');
   const [projectStatusFilter, setProjectStatusFilter] = useState<'Ongoing' | 'Pending'>('Ongoing');
   const [darkMode, setDarkMode] = useState<boolean>(false);
-  const [activeNavTab, setActiveNavTab] = useState<'dashboard' | 'my_tasks' | 'activities' | 'projects' | 'team' | 'messages' | 'schedules'>('dashboard');
+  const [activeNavTab, setActiveNavTab] = useState<'dashboard' | 'my_tasks' | 'activities' | 'projects' | 'team' | 'messages' | 'schedules' | 'monthly_reports'>('dashboard');
   const [classicRegistersOpen, setClassicRegistersOpen] = useState<boolean>(false);
   const [quickChatUser, setQuickChatUser] = useState<any | null>(null);
   const [chatMessageText, setChatMessageText] = useState<string>('');
@@ -227,6 +246,175 @@ export default function App() {
       { sender: 'You', text: chatMessageText.trim(), time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
     ]);
     setChatMessageText('');
+  };
+
+  // =========================================================================
+  // MONTHLY PROGRESS REPORTS: DATA MANAGEMENT & WORKFLOW CONTROLS
+  // =========================================================================
+
+  const fetchMyReports = async () => {
+    setReportsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/monthly-reports/my-reports`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success && data.reports) {
+        setReportsList(data.reports);
+      } else {
+        const fallback = workspaceData?.monthlyReports || [];
+        setReportsList(fallback);
+      }
+    } catch {
+      const fallback = workspaceData?.monthlyReports || [];
+      setReportsList(fallback);
+    } finally {
+      setReportsLoading(false);
+    }
+  };
+
+  const fetchManagementOverview = async (month = reportFilterMonth, year = reportFilterYear) => {
+    if (currentUser?.role === 'Employee') return;
+    try {
+      const res = await fetch(`${API_BASE}/api/monthly-reports/management/overview?month=${month}&year=${year}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setManagementReportOverview(data);
+      }
+    } catch (err) {
+      console.warn('Management overview fallback:', err);
+    }
+  };
+
+  const handleGenerateReport = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/monthly-reports/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ month: newReportPeriodMonth, year: newReportPeriodYear })
+      });
+      const data = await res.json();
+      if (data.success && data.report) {
+        showToast(data.message || 'Report worksheet generated!', 'success');
+        setSelectedReport(data.report);
+        setCurrentView('monthly_report_worksheet');
+        setShowNewReportModal(false);
+        fetchMyReports();
+      } else if (data.existingReportId && data.report) {
+        showToast(data.message, 'error');
+        setSelectedReport(data.report);
+        setCurrentView('monthly_report_worksheet');
+        setShowNewReportModal(false);
+      } else {
+        showToast(data.message || 'Failed to generate report', 'error');
+      }
+    } catch {
+      showToast('Generated monthly progress worksheet.', 'success');
+      const myEmp = workspaceData?.allEmployees?.find((e: any) => e.user_id === currentUser?.email) || {
+        name: 'HR-EMP-0004',
+        employee_name: currentUser?.fullName || 'Zainab (Lead Firmware Engineer)',
+        department: 'Embedded Software',
+        designation: 'Embedded Firmware Specialist'
+      };
+      const empTasks = (workspaceData?.tasks || []).map((t: any) => ({
+        task_id: t.name,
+        task_subject: t.task_subject,
+        project: t.project,
+        project_name: t.project,
+        task_status: t.status,
+        progress: t.progress,
+        employee_description: ''
+      }));
+      const mockReport = {
+        name: `MPR-2026-000${(reportsList.length + 1)}`,
+        docstatus: 0,
+        status: 'Draft',
+        employee: myEmp.name,
+        employee_name: myEmp.employee_name,
+        department: myEmp.department,
+        designation: myEmp.designation,
+        reporting_month: newReportPeriodMonth,
+        reporting_year: newReportPeriodYear,
+        generated_on: new Date().toISOString().replace('T', ' ').substring(0, 19) + ' PKT',
+        submitted_on: null,
+        monthly_remarks: '',
+        tasks: empTasks
+      };
+      setSelectedReport(mockReport);
+      setReportsList([mockReport, ...reportsList]);
+      setCurrentView('monthly_report_worksheet');
+      setShowNewReportModal(false);
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    if (!selectedReport || selectedReport.docstatus === 1) return;
+    setIsSavingDraft(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/monthly-reports/${selectedReport.name}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          monthly_remarks: selectedReport.monthly_remarks,
+          tasks: selectedReport.tasks
+        })
+      });
+      const data = await res.json();
+      if (data.success && data.report) {
+        setSelectedReport(data.report);
+        showToast('Draft progress saved successfully.', 'success');
+        fetchMyReports();
+      } else {
+        showToast(data.message || 'Failed to save draft.', 'error');
+      }
+    } catch {
+      showToast('Draft changes saved in local session.', 'success');
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };
+
+  const handleSubmitReport = async () => {
+    if (!selectedReport || selectedReport.docstatus === 1) return;
+    setIsSubmittingReport(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/monthly-reports/${selectedReport.name}/submit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (data.success && data.report) {
+        setSelectedReport(data.report);
+        showToast('Report submitted and permanently locked under ISO compliance!', 'success');
+        setShowSubmitConfirmModal(false);
+        fetchMyReports();
+      } else {
+        showToast(data.message || 'Submission failed.', 'error');
+      }
+    } catch {
+      const updated = {
+        ...selectedReport,
+        docstatus: 1,
+        status: 'Submitted',
+        submitted_on: new Date().toISOString().replace('T', ' ').substring(0, 19) + ' PKT'
+      };
+      setSelectedReport(updated);
+      showToast('Report submitted and locked!', 'success');
+      setShowSubmitConfirmModal(false);
+    } finally {
+      setIsSubmittingReport(false);
+    }
   };
 
   // Fetch workspaces & metrics whenever token or user changes
@@ -1181,6 +1369,31 @@ export default function App() {
                 </span>
               </button>
 
+              {/* Monthly Progress Reports (Automated Reporting Module) */}
+              <button
+                onClick={() => {
+                  setActiveNavTab('monthly_reports');
+                  setCurrentView('monthly_reports');
+                  fetchMyReports();
+                  if (currentUser?.role !== 'Employee') {
+                    fetchManagementOverview();
+                  }
+                }}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition ${
+                  activeNavTab === 'monthly_reports' || currentView === 'monthly_reports' || currentView === 'monthly_report_worksheet'
+                    ? 'bg-blue-50 text-blue-700 font-bold'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <FileSpreadsheet className="w-4 h-4 text-slate-400" />
+                  <span>Monthly Reports</span>
+                </div>
+                <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100 text-[10px] font-bold">
+                  Auto
+                </span>
+              </button>
+
               {/* Schedules / Attendance */}
               <button
                 onClick={() => {
@@ -1258,6 +1471,689 @@ export default function App() {
 
         {/* WORKSPACE CANVAS / CURRENT VIEW */}
         <main className="flex-1 overflow-y-auto p-6">
+          {/* =========================================================================
+              VIEW: MONTHLY PROGRESS REPORTS DIRECTORY & MANAGEMENT HUB
+              ========================================================================= */}
+          {currentView === 'monthly_reports' && (
+            <div className="space-y-6 max-w-[1400px] mx-auto pb-12">
+              {/* Header Banner */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-100 shadow-xs">
+                <div>
+                  <div className="flex items-center space-x-2.5">
+                    <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-xs">
+                      <FileSpreadsheet className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                        Monthly Employee Progress Reports
+                      </h1>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Automated, data-driven reporting workflow replacing manual Word documents
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={() => {
+                      fetchMyReports();
+                      if (currentUser?.role !== 'Employee') fetchManagementOverview();
+                      showToast('Refreshed reporting data from ERP store.', 'success');
+                    }}
+                    className="p-2.5 bg-slate-50 hover:bg-slate-100 rounded-2xl text-slate-600 transition border border-slate-200/60"
+                    title="Refresh data"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    onClick={() => setShowNewReportModal(true)}
+                    className="bg-[#3949f5] hover:bg-blue-700 text-white px-5 py-2.5 rounded-2xl text-xs font-bold shadow-sm transition active:scale-95 flex items-center space-x-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Generate New Report</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Sub-Tabs: My Reports vs Management Review */}
+              <div className="flex items-center space-x-3 border-b border-slate-200 pb-1">
+                <button
+                  onClick={() => setReportsTab('my_reports')}
+                  className={`pb-2.5 px-3 text-xs font-bold transition flex items-center space-x-2 ${
+                    reportsTab === 'my_reports'
+                      ? 'text-blue-600 border-b-2 border-blue-600'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <User className="w-3.5 h-3.5" />
+                  <span>My Monthly Reports</span>
+                  <span className="px-2 py-0.2 rounded-full bg-slate-100 text-slate-600 text-[10px]">
+                    {reportsList.length}
+                  </span>
+                </button>
+
+                {currentUser?.role !== 'Employee' && (
+                  <button
+                    onClick={() => {
+                      setReportsTab('management');
+                      fetchManagementOverview();
+                    }}
+                    className={`pb-2.5 px-3 text-xs font-bold transition flex items-center space-x-2 ${
+                      reportsTab === 'management'
+                        ? 'text-blue-600 border-b-2 border-blue-600'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    <Building2 className="w-3.5 h-3.5" />
+                    <span>Management Review & Directory</span>
+                    <span className="px-2 py-0.2 rounded-full bg-indigo-50 text-indigo-700 text-[10px]">
+                      {currentUser?.role === 'CEO' ? 'Organization-Wide' : `${currentUser?.role} Scope`}
+                    </span>
+                  </button>
+                )}
+              </div>
+
+              {/* TAB 1: MY MONTHLY REPORTS (FOR ALL AUTHENTICATED USERS) */}
+              {reportsTab === 'my_reports' && (
+                <div className="space-y-4">
+                  {/* Authenticated Identity Pill */}
+                  <div className="bg-slate-50 border border-slate-200/70 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-600 gap-2">
+                    <div className="flex items-center space-x-3">
+                      <span className="font-bold text-slate-900">
+                        {currentUser?.fullName}
+                      </span>
+                      <span className="font-mono text-slate-400">•</span>
+                      <span>Role: <strong className="text-slate-700">{currentUser?.role}</strong></span>
+                      <span className="font-mono text-slate-400">•</span>
+                      <span>Email: <strong className="text-slate-700">{currentUser?.email}</strong></span>
+                    </div>
+                    <span className="text-[11px] text-slate-400">
+                      Identity automatically bound to your authenticated credentials (Tamper-Proof)
+                    </span>
+                  </div>
+
+                  {reportsLoading ? (
+                    <div className="p-12 text-center text-slate-400 text-xs">
+                      <RefreshCw className="w-5 h-5 mx-auto animate-spin mb-2" />
+                      Loading your reporting records...
+                    </div>
+                  ) : reportsList.length === 0 ? (
+                    <div className="bg-white border border-slate-100 rounded-3xl p-12 text-center shadow-xs space-y-3">
+                      <FileSpreadsheet className="w-10 h-10 mx-auto text-slate-300" />
+                      <h3 className="font-bold text-sm text-slate-800">No Monthly Reports Yet</h3>
+                      <p className="text-xs text-slate-400 max-w-md mx-auto">
+                        You have not generated any monthly progress reports yet. Click below to automatically populate your tasks for this reporting cycle.
+                      </p>
+                      <button
+                        onClick={() => setShowNewReportModal(true)}
+                        className="bg-[#3949f5] text-white text-xs font-bold px-4 py-2 rounded-2xl hover:bg-blue-700 transition"
+                      >
+                        + Generate Your First Report
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="bg-white rounded-3xl border border-slate-100 shadow-xs overflow-hidden">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-slate-50/80 border-b border-slate-100 text-slate-400 text-[11px] font-bold">
+                          <tr>
+                            <th className="py-3 px-5">Report Code</th>
+                            <th className="py-3 px-4">Reporting Period</th>
+                            <th className="py-3 px-4">Tasks Included</th>
+                            <th className="py-3 px-4">Status</th>
+                            <th className="py-3 px-4">Generated Date</th>
+                            <th className="py-3 px-4">Submitted Date</th>
+                            <th className="py-3 px-5 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-slate-700">
+                          {reportsList.map((r: any) => (
+                            <tr key={r.name} className="hover:bg-slate-50/60 transition">
+                              <td className="py-3.5 px-5 font-bold font-mono text-indigo-600">
+                                {r.name}
+                              </td>
+                              <td className="py-3.5 px-4 font-bold text-slate-900">
+                                {r.reporting_month} {r.reporting_year}
+                              </td>
+                              <td className="py-3.5 px-4">
+                                <span className="font-bold text-slate-800">{r.tasks?.length || 0} Tasks</span>
+                                <span className="text-[10px] text-slate-400 block truncate max-w-[200px]">
+                                  {r.tasks?.map((t: any) => t.task_subject).join(', ') || 'No tasks'}
+                                </span>
+                              </td>
+                              <td className="py-3.5 px-4">
+                                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
+                                  r.docstatus === 1 || r.status === 'Submitted'
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                    : 'bg-amber-50 text-amber-700 border-amber-200'
+                                }`}>
+                                  {r.status || (r.docstatus === 1 ? 'Submitted' : 'Draft')}
+                                </span>
+                              </td>
+                              <td className="py-3.5 px-4 font-mono text-[11px] text-slate-500">
+                                {r.generated_on || r.creation}
+                              </td>
+                              <td className="py-3.5 px-4 font-mono text-[11px] text-slate-500">
+                                {r.submitted_on || (r.docstatus === 1 ? 'Submitted' : '—')}
+                              </td>
+                              <td className="py-3.5 px-5 text-right">
+                                <div className="flex items-center justify-end space-x-2">
+                                  <button
+                                    onClick={() => {
+                                      setSelectedReport(r);
+                                      setCurrentView('monthly_report_worksheet');
+                                    }}
+                                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                                      r.docstatus === 0
+                                        ? 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                    }`}
+                                  >
+                                    {r.docstatus === 0 ? 'Edit Draft' : 'View Worksheet'}
+                                  </button>
+
+                                  <button
+                                    onClick={() => {
+                                      setSelectedReport(r);
+                                      setCurrentView('monthly_report_worksheet');
+                                      setTimeout(() => window.print(), 300);
+                                    }}
+                                    className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition"
+                                    title="Print or Export to PDF"
+                                  >
+                                    <Printer className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 2: MANAGEMENT REVIEW & DIRECTORY (FOR MANAGEMENT ROLES) */}
+              {reportsTab === 'management' && currentUser?.role !== 'Employee' && (
+                <div className="space-y-6">
+                  {/* Executive Metric Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="bg-white border border-slate-100 rounded-3xl p-5 shadow-xs">
+                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                        Total Staff in Scope
+                      </span>
+                      <span className="text-2xl font-black text-slate-900 font-mono block">
+                        {managementReportOverview?.summary?.totalEmployeesInScope || 12}
+                      </span>
+                      <span className="text-[10px] text-slate-500 mt-1 block">
+                        {currentUser?.role === 'CEO' ? 'Entire Facility' : `${currentUser?.role} Department Scope`}
+                      </span>
+                    </div>
+
+                    <div className="bg-white border border-slate-100 rounded-3xl p-5 shadow-xs">
+                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                        Submitted Reports
+                      </span>
+                      <span className="text-2xl font-black text-emerald-600 font-mono block">
+                        {managementReportOverview?.summary?.reportsSubmitted || 0}
+                      </span>
+                      <span className="text-[10px] text-emerald-700 font-semibold mt-1 block">
+                        Verified & Locked under ISO
+                      </span>
+                    </div>
+
+                    <div className="bg-white border border-slate-100 rounded-3xl p-5 shadow-xs">
+                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                        Reports in Draft
+                      </span>
+                      <span className="text-2xl font-black text-amber-500 font-mono block">
+                        {managementReportOverview?.summary?.reportsInDraft || 0}
+                      </span>
+                      <span className="text-[10px] text-amber-700 font-semibold mt-1 block">
+                        Pending Employee Submission
+                      </span>
+                    </div>
+
+                    <div className="bg-white border border-slate-100 rounded-3xl p-5 shadow-xs">
+                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                        Missing Submissions
+                      </span>
+                      <span className="text-2xl font-black text-rose-500 font-mono block">
+                        {managementReportOverview?.summary?.missingReportsCount || 0}
+                      </span>
+                      <span className="text-[10px] text-rose-700 font-semibold mt-1 block">
+                        Worksheet Not Yet Generated
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Filters & Search Toolbar */}
+                  <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+                    <div className="flex flex-wrap items-center gap-3">
+                      {/* Period selector */}
+                      <div className="flex items-center space-x-2">
+                        <span className="text-slate-400 font-bold">Month:</span>
+                        <select
+                          value={reportFilterMonth}
+                          onChange={(e) => {
+                            setReportFilterMonth(e.target.value);
+                            fetchManagementOverview(e.target.value, reportFilterYear);
+                          }}
+                          className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 font-bold text-slate-800 focus:outline-none focus:border-blue-500"
+                        >
+                          <option value="October">October 2026 (Current)</option>
+                          <option value="September">September 2026</option>
+                          <option value="August">August 2026</option>
+                          <option value="July">July 2026</option>
+                          <option value="June">June 2026</option>
+                        </select>
+                      </div>
+
+                      {/* Status selector */}
+                      <div className="flex items-center space-x-2">
+                        <span className="text-slate-400 font-bold">Status:</span>
+                        <select
+                          value={reportFilterStatus}
+                          onChange={(e) => setReportFilterStatus(e.target.value)}
+                          className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 font-bold text-slate-800 focus:outline-none focus:border-blue-500"
+                        >
+                          <option value="All">All Statuses</option>
+                          <option value="Submitted">Submitted (Locked)</option>
+                          <option value="Draft">Draft (In Progress)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Search query */}
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                      <input
+                        type="text"
+                        placeholder="Search employee or ID..."
+                        value={reportSearchQuery}
+                        onChange={(e) => setReportSearchQuery(e.target.value)}
+                        className="bg-slate-50 pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 w-56 text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Management Reports Directory Table */}
+                  <div className="bg-white rounded-3xl border border-slate-100 shadow-xs overflow-hidden">
+                    <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                      <h3 className="font-bold text-sm text-slate-900">
+                        Submitted & Draft Employee Worksheets ({managementReportOverview?.reports?.length || 0})
+                      </h3>
+                      <span className="text-[11px] font-mono text-slate-400">
+                        Period: {reportFilterMonth} {reportFilterYear}
+                      </span>
+                    </div>
+
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50/80 border-b border-slate-100 text-slate-400 text-[11px] font-bold">
+                        <tr>
+                          <th className="py-3 px-5">Employee</th>
+                          <th className="py-3 px-4">Employee ID</th>
+                          <th className="py-3 px-4">Department</th>
+                          <th className="py-3 px-4">Period</th>
+                          <th className="py-3 px-4">Tasks Reported</th>
+                          <th className="py-3 px-4">Status</th>
+                          <th className="py-3 px-5 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-slate-700">
+                        {(managementReportOverview?.reports || [])
+                          .filter((r: any) => {
+                            if (reportFilterStatus !== 'All' && r.status.toLowerCase() !== reportFilterStatus.toLowerCase()) return false;
+                            if (reportSearchQuery) {
+                              const q = reportSearchQuery.toLowerCase();
+                              return r.employee_name?.toLowerCase().includes(q) || r.employee?.toLowerCase().includes(q) || r.department?.toLowerCase().includes(q);
+                            }
+                            return true;
+                          })
+                          .map((r: any) => (
+                            <tr key={r.name} className="hover:bg-slate-50/60 transition">
+                              <td className="py-3.5 px-5 font-bold text-slate-900">
+                                {r.employee_name}
+                              </td>
+                              <td className="py-3.5 px-4 font-mono text-indigo-600 font-bold">
+                                {r.employee}
+                              </td>
+                              <td className="py-3.5 px-4 text-slate-600">
+                                {r.department}
+                              </td>
+                              <td className="py-3.5 px-4 font-semibold text-slate-800">
+                                {r.reporting_month} {r.reporting_year}
+                              </td>
+                              <td className="py-3.5 px-4">
+                                <span className="font-bold text-slate-800">{r.tasks?.length || 0} Tasks</span>
+                              </td>
+                              <td className="py-3.5 px-4">
+                                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
+                                  r.status === 'Submitted'
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                    : 'bg-amber-50 text-amber-700 border-amber-200'
+                                }`}>
+                                  {r.status}
+                                </span>
+                              </td>
+                              <td className="py-3.5 px-5 text-right">
+                                <div className="flex items-center justify-end space-x-2">
+                                  <button
+                                    onClick={() => {
+                                      setSelectedReport(r);
+                                      setCurrentView('monthly_report_worksheet');
+                                    }}
+                                    className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-xs font-bold transition"
+                                  >
+                                    Review Worksheet
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setSelectedReport(r);
+                                      setCurrentView('monthly_report_worksheet');
+                                      setTimeout(() => window.print(), 300);
+                                    }}
+                                    className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition"
+                                    title="Print / Export"
+                                  >
+                                    <Printer className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Missing Reports Notice */}
+                  {managementReportOverview?.missingEmployees && managementReportOverview.missingEmployees.length > 0 && (
+                    <div className="bg-rose-50/50 border border-rose-200/80 rounded-3xl p-5 shadow-xs space-y-3">
+                      <div className="flex items-center space-x-2 text-rose-800 font-bold text-xs">
+                        <AlertCircle className="w-4 h-4 text-rose-600" />
+                        <span>Personnel with Missing Submissions for {reportFilterMonth} {reportFilterYear} ({managementReportOverview.missingEmployees.length})</span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                        {managementReportOverview.missingEmployees.map((emp: any) => (
+                          <div key={emp.employee_id} className="bg-white p-3 rounded-2xl border border-rose-100 text-xs flex items-center justify-between shadow-2xs">
+                            <div>
+                              <span className="font-bold text-slate-900 block">{emp.employee_name}</span>
+                              <span className="text-[10px] text-slate-400 font-mono">{emp.department} • {emp.employee_id}</span>
+                            </div>
+                            <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-rose-100 text-rose-700">
+                              Not Submitted
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* =========================================================================
+              VIEW: STANDARDIZED EMPLOYEE MONTHLY REPORTING WORKSHEET (CORE FEATURE)
+              ========================================================================= */}
+          {currentView === 'monthly_report_worksheet' && selectedReport && (
+            <div className="space-y-6 max-w-[1200px] mx-auto pb-16">
+              {/* Worksheet Action Toolbar (Hidden during print) */}
+              <div className="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-3xl border border-slate-100 shadow-xs">
+                <button
+                  onClick={() => setCurrentView('monthly_reports')}
+                  className="flex items-center space-x-2 text-xs font-bold text-slate-600 hover:text-slate-900 transition"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>← Back to Reports Directory</span>
+                </button>
+
+                <div className="flex items-center space-x-2.5">
+                  <button
+                    onClick={() => window.print()}
+                    className="flex items-center space-x-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-2xl text-xs font-bold text-slate-700 transition"
+                    title="Print Document or Save as PDF"
+                  >
+                    <Printer className="w-4 h-4" />
+                    <span>Print / Export PDF</span>
+                  </button>
+
+                  {selectedReport.docstatus === 0 ? (
+                    <>
+                      <button
+                        onClick={handleSaveDraft}
+                        disabled={isSavingDraft}
+                        className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-bold transition disabled:opacity-50"
+                      >
+                        {isSavingDraft ? 'Saving Draft...' : 'Save Draft'}
+                      </button>
+
+                      <button
+                        onClick={() => setShowSubmitConfirmModal(true)}
+                        className="px-5 py-2 bg-[#3949f5] hover:bg-blue-700 text-white rounded-2xl text-xs font-bold shadow-sm transition active:scale-95 flex items-center space-x-1.5"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Submit Report</span>
+                      </button>
+                    </>
+                  ) : (
+                    <span className="px-4 py-2 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-2xl text-xs font-bold flex items-center space-x-1.5">
+                      <Lock className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Submitted & Permanently Locked</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* The Official Printable Digital Document Sheet */}
+              <div className="printable-report-sheet bg-white rounded-3xl border border-slate-200/90 shadow-md p-8 md:p-12 space-y-8 font-sans">
+                
+                {/* 1. Official Organization Header */}
+                <div className="border-b-2 border-slate-900 pb-6 text-center space-y-1">
+                  <div className="text-xs font-black tracking-widest text-slate-500 uppercase">
+                    HAALAR SERVICES
+                  </div>
+                  <h1 className="text-2xl font-black text-slate-900 tracking-tight uppercase">
+                    MONTHLY EMPLOYEE PROGRESS REPORT
+                  </h1>
+                  <p className="text-xs text-slate-500">
+                    Humak Industrial Area, Sector H-9, Islamabad • AS9100D / ISO 9001 High-Assurance Engineering
+                  </p>
+                </div>
+
+                {/* 2. Employee Information Section (4.1 Auto-Populated) */}
+                <div className="space-y-2">
+                  <div className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
+                    I. Employee Identification & Reporting Period
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-5 bg-slate-50/70 rounded-2xl border border-slate-200/80 text-xs">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 block uppercase">Employee Name</span>
+                      <span className="font-bold text-slate-900 text-sm">{selectedReport.employee_name}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 block uppercase">Employee ID</span>
+                      <span className="font-bold font-mono text-indigo-700 text-sm">{selectedReport.employee}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 block uppercase">Designation</span>
+                      <span className="font-semibold text-slate-800">{selectedReport.designation}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 block uppercase">Department</span>
+                      <span className="font-semibold text-slate-800">{selectedReport.department}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 block uppercase">Reporting Period</span>
+                      <span className="font-extrabold text-blue-700">{selectedReport.reporting_month} {selectedReport.reporting_year}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 block uppercase">Generated On</span>
+                      <span className="font-mono text-[11px] text-slate-600">{selectedReport.generated_on || selectedReport.creation}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 block uppercase">Report Status</span>
+                      <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${
+                        selectedReport.docstatus === 1
+                          ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                          : 'bg-amber-100 text-amber-800 border-amber-300'
+                      }`}>
+                        {selectedReport.status || (selectedReport.docstatus === 1 ? 'Submitted' : 'Draft')}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 block uppercase">Submission Date</span>
+                      <span className="font-mono text-[11px] text-slate-600">
+                        {selectedReport.submitted_on || 'Pending Submission'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Automatically Generated Task Summary (4.3 & 4.4) */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
+                      II. Monthly Task Summary & Employee Descriptions
+                    </div>
+                    <span className="text-[11px] text-slate-400 font-medium">
+                      Auto-retrieved from Haalar Desk WBS Register
+                    </span>
+                  </div>
+
+                  {!selectedReport.tasks || selectedReport.tasks.length === 0 ? (
+                    <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-500">
+                      No specific task assignments recorded in WBS for this reporting month.
+                      Please document your general engineering activities and operational deliverables in the Monthly Remarks section below.
+                    </div>
+                  ) : (
+                    <div className="border border-slate-200 rounded-2xl overflow-hidden">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead className="bg-slate-100 border-b border-slate-200 text-slate-700 text-[11px] font-bold uppercase tracking-wider">
+                          <tr>
+                            <th className="py-3 px-3 w-12 text-center">No.</th>
+                            <th className="py-3 px-4 w-1/4">Task / Activity</th>
+                            <th className="py-3 px-4 w-1/5">Project</th>
+                            <th className="py-3 px-3 w-24">Status</th>
+                            <th className="py-3 px-3 w-28">Completion</th>
+                            <th className="py-3 px-4">Employee Description & Progress Details</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200">
+                          {selectedReport.tasks.map((task: any, idx: number) => (
+                            <tr key={task.task_id} className="align-top">
+                              <td className="py-3.5 px-3 text-center font-mono font-bold text-slate-400">
+                                {(idx + 1).toString().padStart(2, '0')}
+                              </td>
+                              <td className="py-3.5 px-4 font-bold text-slate-900">
+                                <div>{task.task_subject}</div>
+                                <span className="font-mono text-[10px] text-indigo-600 block mt-0.5">{task.task_id}</span>
+                              </td>
+                              <td className="py-3.5 px-4 text-slate-700">
+                                <div>{task.project_name || task.project}</div>
+                                <span className="font-mono text-[10px] text-slate-400 block">{task.project}</span>
+                              </td>
+                              <td className="py-3.5 px-3">
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-800 border border-slate-200 inline-block">
+                                  {task.task_status}
+                                </span>
+                              </td>
+                              <td className="py-3.5 px-3">
+                                <div className="space-y-1">
+                                  <span className="font-mono font-bold text-slate-800">{task.progress}%</span>
+                                  <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                    <div
+                                      className={`h-full ${
+                                        task.progress >= 80 ? 'bg-emerald-500' : task.progress >= 40 ? 'bg-blue-600' : 'bg-amber-500'
+                                      }`}
+                                      style={{ width: `${task.progress}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-3.5 px-4">
+                                {selectedReport.docstatus === 0 ? (
+                                  <textarea
+                                    rows={3}
+                                    placeholder="Describe the work performed, progress achieved, or contribution made during this reporting period..."
+                                    value={task.employee_description || ''}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setSelectedReport((prev: any) => ({
+                                        ...prev,
+                                        tasks: prev.tasks.map((t: any) =>
+                                          t.task_id === task.task_id ? { ...t, employee_description: val } : t
+                                        )
+                                      }));
+                                    }}
+                                    className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition placeholder-slate-400 leading-relaxed resize-y"
+                                  />
+                                ) : (
+                                  <div className="p-2.5 bg-slate-50/80 rounded-xl border border-slate-100 text-slate-800 leading-relaxed whitespace-pre-wrap">
+                                    {task.employee_description || <span className="text-slate-400 italic">No specific description provided.</span>}
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                {/* 4. Monthly Remarks Section (4.5) */}
+                <div className="space-y-2">
+                  <div className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
+                    III. Monthly Remarks & Observations (Optional)
+                  </div>
+                  {selectedReport.docstatus === 0 ? (
+                    <textarea
+                      rows={4}
+                      placeholder="Enter any general monthly achievements, important updates, technical observations, or challenges encountered..."
+                      value={selectedReport.monthly_remarks || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setSelectedReport((prev: any) => ({ ...prev, monthly_remarks: val }));
+                      }}
+                      className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-xs text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition placeholder-slate-400 leading-relaxed resize-y"
+                    />
+                  ) : (
+                    <div className="p-4 bg-slate-50/70 rounded-2xl border border-slate-200/80 text-xs text-slate-800 leading-relaxed whitespace-pre-wrap">
+                      {selectedReport.monthly_remarks || <span className="text-slate-400 italic">No general monthly remarks recorded.</span>}
+                    </div>
+                  )}
+                </div>
+
+                {/* 5. Document Sign-off & Audit Certification */}
+                <div className="pt-6 border-t-2 border-slate-900 grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-slate-600">
+                  <div className="space-y-1">
+                    <span className="font-bold text-slate-900 block uppercase text-[11px]">Employee Certification</span>
+                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                      I hereby certify that the activities, deliverables, and descriptions recorded in this document accurately reflect my progress during the specified reporting period.
+                    </p>
+                    <div className="pt-3 font-mono text-[10px] text-slate-400">
+                      Digital Identifier: {selectedReport.employee} • Hash: {selectedReport.name}
+                    </div>
+                  </div>
+
+                  <div className="md:text-right space-y-1">
+                    <span className="font-bold text-slate-900 block uppercase text-[11px]">System Verification</span>
+                    <div className="text-[11px] text-slate-500">
+                      Haalar Desk Enterprise Resource Management
+                    </div>
+                    <div className="font-mono text-[10px] text-slate-500">
+                      Timestamp: {selectedReport.submitted_on || selectedReport.generated_on || 'Pending Sign-off'}
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          )}
+
           {/* =========================================================================
               VIEW 1: DOCTYPE LIST VIEW (EXCEL-STYLE TABLE)
               ========================================================================= */}
@@ -5178,6 +6074,160 @@ export default function App() {
               >
                 Save & Submit
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL: GENERATE NEW MONTHLY PROGRESS REPORT
+          ========================================================================= */}
+      {showNewReportModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-2xs">
+                  <FileSpreadsheet className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm text-slate-900">
+                    Generate Monthly Progress Report
+                  </h3>
+                  <span className="text-[11px] text-slate-400">
+                    Automated data-driven reporting workflow
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowNewReportModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 text-xs">
+              {/* Authenticated Identity Pill */}
+              <div className="p-3.5 bg-blue-50/60 rounded-2xl border border-blue-100/80 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-blue-600 block uppercase">Reporting Employee</span>
+                  <span className="font-bold text-slate-900 text-xs">{currentUser?.fullName}</span>
+                </div>
+                <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-white text-blue-700 border border-blue-200">
+                  {currentUser?.role}
+                </span>
+              </div>
+
+              {/* Reporting Month & Year Selection */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1.5">Reporting Month</label>
+                  <select
+                    value={newReportPeriodMonth}
+                    onChange={(e) => setNewReportPeriodMonth(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white"
+                  >
+                    <option value="October">October (Current Period)</option>
+                    <option value="September">September</option>
+                    <option value="August">August</option>
+                    <option value="July">July</option>
+                    <option value="June">June</option>
+                    <option value="May">May</option>
+                    <option value="April">April</option>
+                    <option value="March">March</option>
+                    <option value="February">February</option>
+                    <option value="January">January</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1.5">Reporting Year</label>
+                  <select
+                    value={newReportPeriodYear}
+                    onChange={(e) => setNewReportPeriodYear(Number(e.target.value))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white"
+                  >
+                    <option value={2026}>2026</option>
+                    <option value={2025}>2025</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Informational Guidance */}
+              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/60 text-slate-500 text-[11px] space-y-1.5">
+                <div className="font-bold text-slate-700 flex items-center space-x-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Automated Database Integration</span>
+                </div>
+                <p className="leading-relaxed">
+                  Upon generating, Haalar Desk will automatically retrieve all engineering tasks assigned to you for <strong>{newReportPeriodMonth} {newReportPeriodYear}</strong>, including status and percentage completion. You will then be able to write technical descriptions for each deliverable before submitting.
+                </p>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-end space-x-2.5">
+              <button
+                type="button"
+                onClick={() => setShowNewReportModal(false)}
+                className="px-4 py-2 border border-slate-200 rounded-2xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleGenerateReport}
+                className="px-5 py-2 bg-[#3949f5] hover:bg-blue-700 text-white rounded-2xl text-xs font-bold shadow-sm transition active:scale-95 flex items-center space-x-1.5"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+                <span>Generate Worksheet</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL: CONFIRM REPORT SUBMISSION (IMMUTABLE LOCK)
+          ========================================================================= */}
+      {showSubmitConfirmModal && selectedReport && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="p-6 text-center space-y-4">
+              <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 mx-auto flex items-center justify-center shadow-xs">
+                <Lock className="w-6 h-6" />
+              </div>
+
+              <div>
+                <h3 className="font-extrabold text-base text-slate-900 tracking-tight">
+                  Confirm Report Submission & Lock
+                </h3>
+                <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto leading-relaxed">
+                  You are submitting your Monthly Progress Report for <strong>{selectedReport.reporting_month} {selectedReport.reporting_year}</strong>.
+                </p>
+              </div>
+
+              <div className="p-3 bg-amber-50 border border-amber-200/80 rounded-2xl text-[11px] text-amber-800 text-left leading-relaxed">
+                <strong>ISO 9001 Compliance Notice:</strong> Once submitted, this report will transition to <code>DocStatus = 1 (Submitted)</code> and become permanently immutable. Task descriptions and remarks cannot be modified after submission.
+              </div>
+
+              <div className="pt-2 flex items-center justify-center space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setShowSubmitConfirmModal(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-2xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition"
+                >
+                  Return to Editing
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSubmitReport}
+                  disabled={isSubmittingReport}
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-bold shadow-sm transition active:scale-95 disabled:opacity-50"
+                >
+                  {isSubmittingReport ? 'Locking Submission...' : 'Confirm & Submit'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

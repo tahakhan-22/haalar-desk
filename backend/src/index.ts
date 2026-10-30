@@ -5,6 +5,7 @@ import { initDatabase } from './config/db';
 import { authRouter } from './routes/auth';
 import { deskRouter } from './routes/desk';
 import { doctypeRouter } from './routes/doctype';
+import { monthlyReportRouter } from './routes/monthlyReport';
 
 dotenv.config();
 
@@ -39,6 +40,8 @@ app.use('/api/desk', deskRouter);
 app.use('/desk', deskRouter);
 app.use('/api/doctype', doctypeRouter);
 app.use('/doctype', doctypeRouter);
+app.use('/api/monthly-reports', monthlyReportRouter);
+app.use('/monthly-reports', monthlyReportRouter);
 
 // Export app for serverless / service integration
 export default app;

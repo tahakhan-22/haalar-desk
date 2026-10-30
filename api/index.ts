@@ -3,6 +3,7 @@ import cors from 'cors';
 import { authRouter } from '../backend/src/routes/auth';
 import { deskRouter } from '../backend/src/routes/desk';
 import { doctypeRouter } from '../backend/src/routes/doctype';
+import { monthlyReportRouter } from '../backend/src/routes/monthlyReport';
 
 const app = express();
 
@@ -32,5 +33,7 @@ app.use('/api/desk', deskRouter);
 app.use('/desk', deskRouter);
 app.use('/api/doctype', doctypeRouter);
 app.use('/doctype', doctypeRouter);
+app.use('/api/monthly-reports', monthlyReportRouter);
+app.use('/monthly-reports', monthlyReportRouter);
 
 export default app;

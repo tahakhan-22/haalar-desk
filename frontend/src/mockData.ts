@@ -254,6 +254,101 @@ export const getFallbackWorkspaceData = (role: string = 'CEO') => {
     allEmployees,
     assetRequests,
     allAssets,
+    monthlyReports: [
+      {
+        name: 'MPR-2026-0001',
+        creation: '2026-09-28 09:15:00',
+        modified: '2026-09-30 16:45:00',
+        modified_by: 'zainab@haalar.com',
+        owner: 'zainab@haalar.com',
+        docstatus: 1,
+        status: 'Submitted',
+        employee: 'HR-EMP-0004',
+        employee_name: 'Zainab (Lead Firmware Engineer)',
+        department: 'Embedded Software',
+        designation: 'Embedded Firmware Specialist',
+        user_id: 'zainab@haalar.com',
+        reporting_month: 'September',
+        reporting_year: 2026,
+        report_period_key: '2026-09',
+        generated_on: '2026-09-28 09:15:00 PKT',
+        submitted_on: '2026-09-30 16:45:00 PKT',
+        monthly_remarks: 'All September milestones for CAN-Bus protocol and dual-bank bootloader integration completed on schedule. Awaiting environmental chamber slot for thermal stress testing.',
+        tasks: [
+          {
+            task_id: 'TASK-2026-0002',
+            task_subject: 'Telemetry ECU CAN-Bus Driver & Bootloader Verification',
+            project: 'PRJ-2026-0002',
+            project_name: 'Telemetry ECU & Avionics Interface Unit',
+            task_status: 'Working',
+            progress: 50,
+            employee_description: 'Designed SPI flash partition table and benchmarked hardware CRC32 image verification engine at 2.4ms execution time on Artix-7 target.'
+          }
+        ]
+      },
+      {
+        name: 'MPR-2026-0002',
+        creation: '2026-09-29 11:00:00',
+        modified: '2026-09-30 17:20:00',
+        modified_by: 'taha@haalar.com',
+        owner: 'taha@haalar.com',
+        docstatus: 1,
+        status: 'Submitted',
+        employee: 'HR-EMP-0005',
+        employee_name: 'Taha (Hardware Prototyping Engineer)',
+        department: 'Electronics Design',
+        designation: 'Lead Prototyping Engineer',
+        user_id: 'taha@haalar.com',
+        reporting_month: 'September',
+        reporting_year: 2026,
+        report_period_key: '2026-09',
+        generated_on: '2026-09-29 11:00:00 PKT',
+        submitted_on: '2026-09-30 17:20:00 PKT',
+        monthly_remarks: 'Completed high-speed differential signal integrity routing on radar PCB prototypes; all DDR3 length match tolerances verified within 3 mils.',
+        tasks: [
+          {
+            task_id: 'TASK-2026-0001',
+            task_subject: 'Radar DSP Core Architecture & High-Speed DDR3 Interface',
+            project: 'PRJ-2026-0001',
+            project_name: 'Radar DSP High-Speed Digital Processing Core',
+            task_status: 'Working',
+            progress: 65,
+            employee_description: 'Executed TDR impedance analysis on 50-ohm single-ended and 100-ohm differential microstrips; cleared all DRC violation flags.'
+          }
+        ]
+      },
+      {
+        name: 'MPR-2026-0003',
+        creation: '2026-10-24 10:30:00',
+        modified: '2026-10-28 14:15:00',
+        modified_by: 'zainab@haalar.com',
+        owner: 'zainab@haalar.com',
+        docstatus: 0,
+        status: 'Draft',
+        employee: 'HR-EMP-0004',
+        employee_name: 'Zainab (Lead Firmware Engineer)',
+        department: 'Embedded Software',
+        designation: 'Embedded Firmware Specialist',
+        user_id: 'zainab@haalar.com',
+        reporting_month: 'October',
+        reporting_year: 2026,
+        report_period_key: '2026-10',
+        generated_on: '2026-10-24 10:30:00 PKT',
+        submitted_on: null,
+        monthly_remarks: 'Draft in progress for October reporting cycle. Telemetry firmware bench testing ongoing.',
+        tasks: [
+          {
+            task_id: 'TASK-2026-0002',
+            task_subject: 'Telemetry ECU CAN-Bus Driver & Bootloader Verification',
+            project: 'PRJ-2026-0002',
+            project_name: 'Telemetry ECU & Avionics Interface Unit',
+            task_status: 'Working',
+            progress: 65,
+            employee_description: 'Integrated CAN-FD driver with 5 Mbps broadcast rate; validated flash failover during simulated brownout conditions.'
+          }
+        ]
+      }
+    ],
     projectPhases,
     teamWorkload,
     inventoryBulletGauges,

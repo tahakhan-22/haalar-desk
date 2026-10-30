@@ -20890,7 +20890,7 @@ var require_application = __commonJS({
   "node_modules/express/lib/application.js"(exports2, module2) {
     "use strict";
     var finalhandler = require_finalhandler();
-    var Router4 = require_router();
+    var Router5 = require_router();
     var methods = require_methods();
     var middleware = require_init();
     var query = require_query();
@@ -20955,7 +20955,7 @@ var require_application = __commonJS({
     };
     app2.lazyrouter = function lazyrouter() {
       if (!this._router) {
-        this._router = new Router4({
+        this._router = new Router5({
           caseSensitive: this.enabled("case sensitive routing"),
           strict: this.enabled("strict routing")
         });
@@ -22819,7 +22819,7 @@ var require_express = __commonJS({
     var mixin = require_merge_descriptors();
     var proto = require_application();
     var Route = require_route();
-    var Router4 = require_router();
+    var Router5 = require_router();
     var req = require_request();
     var res = require_response();
     exports2 = module2.exports = createApplication;
@@ -22842,7 +22842,7 @@ var require_express = __commonJS({
     exports2.request = req;
     exports2.response = res;
     exports2.Route = Route;
-    exports2.Router = Router4;
+    exports2.Router = Router5;
     exports2.json = bodyParser.json;
     exports2.query = require_query();
     exports2.raw = bodyParser.raw;
@@ -44007,7 +44007,7 @@ var require_application2 = __commonJS({
   "backend/node_modules/express/lib/application.js"(exports2, module2) {
     "use strict";
     var finalhandler = require_finalhandler2();
-    var Router4 = require_router2();
+    var Router5 = require_router2();
     var methods = require_methods2();
     var middleware = require_init2();
     var query = require_query2();
@@ -44072,7 +44072,7 @@ var require_application2 = __commonJS({
     };
     app2.lazyrouter = function lazyrouter() {
       if (!this._router) {
-        this._router = new Router4({
+        this._router = new Router5({
           caseSensitive: this.enabled("case sensitive routing"),
           strict: this.enabled("strict routing")
         });
@@ -45936,7 +45936,7 @@ var require_express3 = __commonJS({
     var mixin = require_merge_descriptors2();
     var proto = require_application2();
     var Route = require_route2();
-    var Router4 = require_router2();
+    var Router5 = require_router2();
     var req = require_request2();
     var res = require_response2();
     exports2 = module2.exports = createApplication;
@@ -45959,7 +45959,7 @@ var require_express3 = __commonJS({
     exports2.request = req;
     exports2.response = res;
     exports2.Route = Route;
-    exports2.Router = Router4;
+    exports2.Router = Router5;
     exports2.json = bodyParser.json;
     exports2.query = require_query2();
     exports2.raw = bodyParser.raw;
@@ -49881,7 +49881,7 @@ __export(index_exports, {
   default: () => index_default
 });
 module.exports = __toCommonJS(index_exports);
-var import_express4 = __toESM(require_express2());
+var import_express5 = __toESM(require_express2());
 var import_cors = __toESM(require_lib3());
 
 // backend/src/routes/auth.ts
@@ -49909,7 +49909,8 @@ var ERPStore = class {
     "TASK-2026-": 6,
     "COMP-2026-": 22,
     "PHASE-2026-": 6,
-    "REQ-2026-": 5
+    "REQ-2026-": 5,
+    "MPR-2026-": 3
   };
   tables = {
     tab_user: [
@@ -51245,6 +51246,113 @@ var ERPStore = class {
         notes: "",
         days_open: 1
       }
+    ],
+    tab_monthly_progress_report: [
+      {
+        name: "MPR-2026-0001",
+        creation: "2026-09-28 09:15:00",
+        modified: "2026-09-30 16:45:00",
+        modified_by: "zainab@haalar.com",
+        owner: "zainab@haalar.com",
+        docstatus: 1,
+        // Submitted
+        status: "Submitted",
+        employee: "HR-EMP-0004",
+        employee_name: "Zainab (Lead Firmware Engineer)",
+        department: "Embedded Software",
+        designation: "Embedded Firmware Specialist",
+        user_id: "zainab@haalar.com",
+        reporting_month: "September",
+        reporting_year: 2026,
+        report_period_key: "2026-09",
+        generated_on: "2026-09-28 09:15:00 PKT",
+        submitted_on: "2026-09-30 16:45:00 PKT",
+        monthly_remarks: "All September milestones for CAN-Bus protocol and dual-bank bootloader integration completed on schedule. Awaiting environmental chamber slot for thermal stress testing.",
+        tasks: [
+          {
+            task_id: "TASK-2026-0002",
+            task_subject: "Telemetry ECU CAN-Bus Driver & Bootloader Verification",
+            project: "PRJ-2026-0002",
+            project_name: "Telemetry ECU & Avionics Interface Unit",
+            task_status: "Working",
+            progress: 50,
+            employee_description: "Designed SPI flash partition table and benchmarked hardware CRC32 image verification engine at 2.4ms execution time on Artix-7 target."
+          }
+        ]
+      },
+      {
+        name: "MPR-2026-0002",
+        creation: "2026-09-29 11:00:00",
+        modified: "2026-09-30 17:20:00",
+        modified_by: "taha@haalar.com",
+        owner: "taha@haalar.com",
+        docstatus: 1,
+        // Submitted
+        status: "Submitted",
+        employee: "HR-EMP-0005",
+        employee_name: "Taha (Hardware Prototyping Engineer)",
+        department: "Electronics Design",
+        designation: "Lead Prototyping Engineer",
+        user_id: "taha@haalar.com",
+        reporting_month: "September",
+        reporting_year: 2026,
+        report_period_key: "2026-09",
+        generated_on: "2026-09-29 11:00:00 PKT",
+        submitted_on: "2026-09-30 17:20:00 PKT",
+        monthly_remarks: "Completed high-speed differential signal integrity routing on radar PCB prototypes; all DDR3 length match tolerances verified within 3 mils.",
+        tasks: [
+          {
+            task_id: "TASK-2026-0001",
+            task_subject: "Radar DSP Core Signal Routing & Timing Closure",
+            project: "PRJ-2026-0001",
+            project_name: "Radar DSP High-Speed Digital Processing Core",
+            task_status: "Working",
+            progress: 85,
+            employee_description: "Executed TDR impedance analysis on 50-ohm single-ended and 100-ohm differential microstrips; cleared all DRC violation flags."
+          }
+        ]
+      },
+      {
+        name: "MPR-2026-0003",
+        creation: "2026-10-24 10:30:00",
+        modified: "2026-10-28 14:15:00",
+        modified_by: "zainab@haalar.com",
+        owner: "zainab@haalar.com",
+        docstatus: 0,
+        // Draft
+        status: "Draft",
+        employee: "HR-EMP-0004",
+        employee_name: "Zainab (Lead Firmware Engineer)",
+        department: "Embedded Software",
+        designation: "Embedded Firmware Specialist",
+        user_id: "zainab@haalar.com",
+        reporting_month: "October",
+        reporting_year: 2026,
+        report_period_key: "2026-10",
+        generated_on: "2026-10-24 10:30:00 PKT",
+        submitted_on: null,
+        monthly_remarks: "Draft in progress for October reporting cycle. Telemetry firmware bench testing and bitstream crypto flashing ongoing.",
+        tasks: [
+          {
+            task_id: "TASK-2026-0002",
+            task_subject: "Telemetry ECU CAN-Bus Driver & Bootloader Verification",
+            project: "PRJ-2026-0002",
+            project_name: "Telemetry ECU & Avionics Interface Unit",
+            task_status: "Working",
+            progress: 65,
+            employee_description: "Integrated CAN-FD driver with 5 Mbps broadcast rate; validated flash failover during simulated brownout conditions."
+          },
+          {
+            task_id: "TASK-2026-0006",
+            task_subject: "FPGA High-Reliability Bitstream Crypto Flashing",
+            project: "PRJ-2026-0001",
+            project_name: "Radar DSP High-Speed Digital Processing Core",
+            task_status: "Open",
+            progress: 25,
+            employee_description: "Generated AES-256 encrypted configuration bitstream from Vivado and verified key storage in hardware vault."
+          }
+        ]
+      }
     ]
   };
   // Naming series generator matching ERPNext
@@ -51985,14 +52093,318 @@ doctypeRouter.post("/tab_task_component/:id/note", (req, res) => {
   });
 });
 
+// backend/src/routes/monthlyReport.ts
+var import_express4 = __toESM(require_express4());
+var monthlyReportRouter = (0, import_express4.Router)();
+monthlyReportRouter.use(authenticate);
+function getPKTTimestamp(date = /* @__PURE__ */ new Date()) {
+  const pad = (n) => n.toString().padStart(2, "0");
+  const yyyy = date.getFullYear();
+  const mm = pad(date.getMonth() + 1);
+  const dd = pad(date.getDate());
+  const hh = pad(date.getHours());
+  const min = pad(date.getMinutes());
+  const ss = pad(date.getSeconds());
+  return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss} PKT`;
+}
+monthlyReportRouter.get("/periods", (_req, res) => {
+  const currentYear = 2026;
+  const periods = [
+    { month: "October", year: currentYear, periodKey: `${currentYear}-10`, label: `October ${currentYear} (Current Period)`, isCurrent: true },
+    { month: "September", year: currentYear, periodKey: `${currentYear}-09`, label: `September ${currentYear}`, isCurrent: false },
+    { month: "August", year: currentYear, periodKey: `${currentYear}-08`, label: `August ${currentYear}`, isCurrent: false },
+    { month: "July", year: currentYear, periodKey: `${currentYear}-07`, label: `July ${currentYear}`, isCurrent: false },
+    { month: "June", year: currentYear, periodKey: `${currentYear}-06`, label: `June ${currentYear}`, isCurrent: false }
+  ];
+  res.json({
+    success: true,
+    periods
+  });
+});
+monthlyReportRouter.get("/my-reports", (req, res) => {
+  const userEmail = req.user?.email;
+  const myEmp = erpStore.tables.tab_employee?.find((e) => e.user_id === userEmail);
+  const allReports = erpStore.tables.tab_monthly_progress_report || [];
+  const reports = allReports.filter(
+    (r) => r.user_id === userEmail || myEmp && r.employee === myEmp.name
+  );
+  res.json({
+    success: true,
+    count: reports.length,
+    reports
+  });
+});
+monthlyReportRouter.post("/generate", (req, res) => {
+  const userEmail = req.user?.email;
+  const { month, year } = req.body;
+  if (!month || !year) {
+    res.status(400).json({ success: false, message: "Reporting month and year are required." });
+    return;
+  }
+  const myEmp = erpStore.tables.tab_employee?.find((e) => e.user_id === userEmail);
+  if (!myEmp) {
+    res.status(404).json({ success: false, message: "Employee master record not found for authenticated user." });
+    return;
+  }
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const monthIndex = monthNames.findIndex((m) => m.toLowerCase() === String(month).toLowerCase());
+  const formattedMonth = monthIndex >= 0 ? monthNames[monthIndex] : String(month);
+  const padMonth = (monthIndex + 1).toString().padStart(2, "0");
+  const periodKey = `${year}-${padMonth}`;
+  const existingReports = erpStore.tables.tab_monthly_progress_report || [];
+  const duplicate = existingReports.find(
+    (r) => (r.employee === myEmp.name || r.user_id === userEmail) && r.report_period_key === periodKey && r.docstatus !== 2
+  );
+  if (duplicate) {
+    res.status(409).json({
+      success: false,
+      message: `A monthly report for ${formattedMonth} ${year} already exists (${duplicate.name}).`,
+      existingReportId: duplicate.name,
+      report: duplicate
+    });
+    return;
+  }
+  const allTasks = erpStore.tables.tab_task || [];
+  const empTasks = allTasks.filter(
+    (t) => t.assigned_to === myEmp.name || t.assigned_to === myEmp.employee_code || t.assigned_to === userEmail || t.assigned_to_name === myEmp.employee_name
+  );
+  const taskSnapshots = empTasks.map((t) => ({
+    task_id: t.name,
+    task_subject: t.task_subject || "Engineering Deliverable",
+    project: t.project || "PRJ-2026-0001",
+    project_name: t.project_name || "Defense Avionics Project",
+    task_status: t.status || "Working",
+    progress: Number(t.progress || 0),
+    employee_description: ""
+  }));
+  const newName = erpStore.getNextSeries("MPR-2026-");
+  const nowPKT = getPKTTimestamp();
+  const newReport = {
+    name: newName,
+    creation: (/* @__PURE__ */ new Date()).toISOString().replace("T", " ").substring(0, 19),
+    modified: (/* @__PURE__ */ new Date()).toISOString().replace("T", " ").substring(0, 19),
+    modified_by: userEmail,
+    owner: userEmail,
+    docstatus: 0,
+    // 0 = Draft
+    status: "Draft",
+    employee: myEmp.name,
+    employee_name: myEmp.employee_name,
+    department: myEmp.department,
+    designation: myEmp.designation,
+    user_id: userEmail,
+    reporting_month: formattedMonth,
+    reporting_year: Number(year),
+    report_period_key: periodKey,
+    generated_on: nowPKT,
+    submitted_on: null,
+    monthly_remarks: "",
+    tasks: taskSnapshots
+  };
+  if (!erpStore.tables.tab_monthly_progress_report) {
+    erpStore.tables.tab_monthly_progress_report = [];
+  }
+  erpStore.tables.tab_monthly_progress_report.push(newReport);
+  res.status(201).json({
+    success: true,
+    message: `Monthly Progress Report worksheet generated for ${formattedMonth} ${year}.`,
+    report: newReport
+  });
+});
+monthlyReportRouter.get("/management/overview", (req, res) => {
+  const role = req.user?.role || "Employee";
+  if (role === "Employee") {
+    res.status(403).json({ success: false, message: "Access denied: Executive or supervisory clearance required." });
+    return;
+  }
+  const selectedMonth = String(req.query.month || "October");
+  const selectedYear = Number(req.query.year || 2026);
+  const selectedStatus = req.query.status ? String(req.query.status) : null;
+  const searchQuery = req.query.search ? String(req.query.search).toLowerCase() : "";
+  let employeesInScope = [...erpStore.tables.tab_employee || []];
+  if (role === "Supervisor") {
+    const engineeringDepts = [
+      "Hardware & RF Engineering",
+      "Embedded Software",
+      "Electronics Design",
+      "Avionics Systems",
+      "PCB Design & Assembly",
+      "Quality Assurance"
+    ];
+    employeesInScope = employeesInScope.filter((e) => engineeringDepts.includes(e.department));
+  } else if (role === "Logistics Admin") {
+    const logisticsDepts = ["Procurement & Logistics", "Facilities & Safety"];
+    employeesInScope = employeesInScope.filter((e) => logisticsDepts.includes(e.department));
+  }
+  const allReports = erpStore.tables.tab_monthly_progress_report || [];
+  const scopedEmpIds = new Set(employeesInScope.map((e) => e.name));
+  let periodReports = allReports.filter(
+    (r) => scopedEmpIds.has(r.employee) && r.reporting_month.toLowerCase() === selectedMonth.toLowerCase() && Number(r.reporting_year) === selectedYear && r.docstatus !== 2
+    // Exclude cancelled
+  );
+  if (selectedStatus) {
+    periodReports = periodReports.filter((r) => r.status.toLowerCase() === selectedStatus.toLowerCase());
+  }
+  if (searchQuery) {
+    periodReports = periodReports.filter(
+      (r) => r.employee_name?.toLowerCase().includes(searchQuery) || r.employee?.toLowerCase().includes(searchQuery) || r.department?.toLowerCase().includes(searchQuery) || r.name?.toLowerCase().includes(searchQuery)
+    );
+  }
+  const submittedCount = periodReports.filter((r) => r.status === "Submitted").length;
+  const draftCount = periodReports.filter((r) => r.status === "Draft").length;
+  const reportedEmpIds = new Set(
+    allReports.filter((r) => r.reporting_month.toLowerCase() === selectedMonth.toLowerCase() && Number(r.reporting_year) === selectedYear && r.docstatus !== 2).map((r) => r.employee)
+  );
+  const missingEmployees = employeesInScope.filter((e) => !reportedEmpIds.has(e.name)).map((e) => ({
+    employee_id: e.name,
+    employee_name: e.employee_name,
+    department: e.department,
+    designation: e.designation,
+    status: "Not Generated"
+  }));
+  res.json({
+    success: true,
+    summary: {
+      period: `${selectedMonth} ${selectedYear}`,
+      totalEmployeesInScope: employeesInScope.length,
+      reportsGenerated: periodReports.length,
+      reportsSubmitted: submittedCount,
+      reportsInDraft: draftCount,
+      missingReportsCount: missingEmployees.length
+    },
+    reports: periodReports,
+    missingEmployees
+  });
+});
+monthlyReportRouter.get("/:id", (req, res) => {
+  const id = String(req.params.id);
+  const user = req.user;
+  const role = user?.role || "Employee";
+  const report = erpStore.tables.tab_monthly_progress_report?.find((r) => r.name === id);
+  if (!report) {
+    res.status(404).json({ success: false, message: `Monthly Progress Report '${id}' not found.` });
+    return;
+  }
+  if (role === "Employee") {
+    const isOwner = report.user_id === user?.email || report.employee === erpStore.tables.tab_employee?.find((e) => e.user_id === user?.email)?.name;
+    if (!isOwner) {
+      res.status(403).json({ success: false, message: "Access denied: You may only view your own monthly progress reports." });
+      return;
+    }
+  } else if (role === "Supervisor") {
+    const engineeringDepts = ["Hardware & RF Engineering", "Embedded Software", "Electronics Design", "Avionics Systems", "PCB Design & Assembly", "Quality Assurance"];
+    if (!engineeringDepts.includes(report.department)) {
+      res.status(403).json({ success: false, message: "Access denied: Report is outside supervisor engineering department scope." });
+      return;
+    }
+  } else if (role === "Logistics Admin") {
+    const logisticsDepts = ["Procurement & Logistics", "Facilities & Safety"];
+    if (!logisticsDepts.includes(report.department)) {
+      res.status(403).json({ success: false, message: "Access denied: Report is outside logistics department scope." });
+      return;
+    }
+  }
+  res.json({
+    success: true,
+    report
+  });
+});
+monthlyReportRouter.put("/:id", (req, res) => {
+  const id = String(req.params.id);
+  const userEmail = req.user?.email;
+  const role = req.user?.role || "Employee";
+  const report = erpStore.tables.tab_monthly_progress_report?.find((r) => r.name === id);
+  if (!report) {
+    res.status(404).json({ success: false, message: `Report '${id}' not found.` });
+    return;
+  }
+  if (report.docstatus === 1) {
+    res.status(403).json({
+      success: false,
+      message: "Submitted reports are permanently locked under ISO compliance and cannot be edited."
+    });
+    return;
+  }
+  if (role !== "CEO" && report.user_id !== userEmail) {
+    res.status(403).json({ success: false, message: "Access denied: You cannot edit another employee's report." });
+    return;
+  }
+  const { monthly_remarks, tasks } = req.body;
+  if (typeof monthly_remarks === "string") {
+    report.monthly_remarks = monthly_remarks;
+  }
+  if (Array.isArray(tasks)) {
+    tasks.forEach((updatedTask) => {
+      const existingTask = report.tasks.find((t) => t.task_id === updatedTask.task_id);
+      if (existingTask && typeof updatedTask.employee_description === "string") {
+        existingTask.employee_description = updatedTask.employee_description;
+      }
+    });
+  }
+  report.modified = (/* @__PURE__ */ new Date()).toISOString().replace("T", " ").substring(0, 19);
+  report.modified_by = userEmail;
+  res.json({
+    success: true,
+    message: "Report draft saved successfully.",
+    report
+  });
+});
+monthlyReportRouter.post("/:id/submit", (req, res) => {
+  const id = String(req.params.id);
+  const userEmail = req.user?.email;
+  const role = req.user?.role || "Employee";
+  const report = erpStore.tables.tab_monthly_progress_report?.find((r) => r.name === id);
+  if (!report) {
+    res.status(404).json({ success: false, message: `Report '${id}' not found.` });
+    return;
+  }
+  if (report.docstatus === 1) {
+    res.status(400).json({ success: false, message: "This report is already submitted and locked." });
+    return;
+  }
+  if (role !== "CEO" && report.user_id !== userEmail) {
+    res.status(403).json({ success: false, message: "Access denied: You cannot submit another employee's report." });
+    return;
+  }
+  report.docstatus = 1;
+  report.status = "Submitted";
+  report.submitted_on = getPKTTimestamp();
+  report.modified = (/* @__PURE__ */ new Date()).toISOString().replace("T", " ").substring(0, 19);
+  report.modified_by = userEmail;
+  res.json({
+    success: true,
+    message: `Monthly Progress Report ${id} submitted successfully and permanently locked.`,
+    report
+  });
+});
+monthlyReportRouter.get("/:id/export", (req, res) => {
+  const id = String(req.params.id);
+  const report = erpStore.tables.tab_monthly_progress_report?.find((r) => r.name === id);
+  if (!report) {
+    res.status(404).json({ success: false, message: `Report '${id}' not found.` });
+    return;
+  }
+  res.json({
+    success: true,
+    organization: {
+      name: "HAALAR SERVICES",
+      division: "Defense & Aerospace Systems",
+      facility: "Humak Industrial Complex, Sector H-9, Islamabad",
+      documentTitle: "MONTHLY EMPLOYEE PROGRESS REPORT",
+      complianceStandard: "ISO 9001 / AS9100D High-Assurance Engineering"
+    },
+    report
+  });
+});
+
 // api/index.ts
-var app = (0, import_express4.default)();
+var app = (0, import_express5.default)();
 app.use((0, import_cors.default)({
   origin: "*",
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
-app.use(import_express4.default.json());
+app.use(import_express5.default.json());
 var healthHandler = (req, res) => {
   res.json({
     app: "Haalar Desk Engine",
@@ -52009,6 +52421,8 @@ app.use("/api/desk", deskRouter);
 app.use("/desk", deskRouter);
 app.use("/api/doctype", doctypeRouter);
 app.use("/doctype", doctypeRouter);
+app.use("/api/monthly-reports", monthlyReportRouter);
+app.use("/monthly-reports", monthlyReportRouter);
 var index_default = app;
 /*! Bundled license information:
 
@@ -52374,5 +52788,3 @@ object-assign/index.js:
   @license MIT
   *)
 */
-
-module.exports = module.exports.default || module.exports;
