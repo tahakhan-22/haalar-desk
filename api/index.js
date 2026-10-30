@@ -51382,6 +51382,24 @@ function authenticate(req, res, next) {
     res.status(401).json({ success: false, message: "Session expired or invalid token." });
   }
 }
+function hasRole(user, ...roles) {
+  if (!user) return false;
+  return roles.includes(user.role);
+}
+function sanitizeDoc(doc, tableName, role) {
+  if (!doc) return doc;
+  const sanitized = { ...doc };
+  if (tableName === "tab_user" || sanitized.password_hash) {
+    delete sanitized.password_hash;
+  }
+  if (tableName === "tab_employee") {
+    if (role !== "CEO") {
+      delete sanitized.salary_pkr;
+      delete sanitized.cnic;
+    }
+  }
+  return sanitized;
+}
 
 // backend/src/routes/auth.ts
 var authRouter = (0, import_express.Router)();
@@ -51813,6 +51831,77 @@ deskRouter.get("/workspaces", (req, res) => {
 var import_express3 = __toESM(require_express4());
 var doctypeRouter = (0, import_express3.Router)();
 doctypeRouter.use(authenticate);
+function canReadTable(tableName, role) {
+  if (tableName === "tab_utility_bill" || tableName === "tab_kitchen_expense" || tableName === "tab_expense_claim") {
+    return role === "CEO" || role === "Logistics Admin";
+  }
+  return true;
+}
+function canCreateTable(tableName, role) {
+  if (tableName === "tab_employee") {
+    if (role !== "CEO") {
+      return { allowed: false, message: "Access denied: Only CEO / Executive Directorate may create employee master records." };
+    }
+  }
+  if (tableName === "tab_utility_bill" || tableName === "tab_kitchen_expense") {
+    if (role !== "CEO" && role !== "Logistics Admin") {
+      return { allowed: false, message: "Access denied: Financial and utility records can only be created by Logistics Admin or CEO." };
+    }
+  }
+  if (tableName === "tab_project") {
+    if (role !== "CEO" && role !== "Supervisor") {
+      return { allowed: false, message: "Access denied: Classified project creation requires Supervisory or CEO clearance." };
+    }
+  }
+  if (tableName === "tab_task") {
+    if (role !== "CEO" && role !== "Supervisor") {
+      return { allowed: false, message: "Access denied: Task assignment and WBS generation requires Supervisory or CEO clearance." };
+    }
+  }
+  if (tableName === "tab_asset" || tableName === "tab_item") {
+    if (role !== "CEO" && role !== "Logistics Admin") {
+      return { allowed: false, message: "Access denied: Equipment and inventory additions require Logistics Admin or CEO clearance." };
+    }
+  }
+  return { allowed: true };
+}
+function canModifyDoc(tableName, doc, user, updates) {
+  if (doc.docstatus === 1) {
+    return { allowed: false, message: "Document is submitted and locked. Direct modifications are prohibited under audit regulations." };
+  }
+  if (tableName === "tab_employee") {
+    const restrictedFields = ["salary_pkr", "cnic", "security_clearance", "role"];
+    const touchesRestricted = restrictedFields.some((field) => updates[field] !== void 0);
+    if (touchesRestricted && user.role !== "CEO") {
+      return {
+        allowed: false,
+        message: "Access denied: Modifying confidential executive HR fields (salary, CNIC, clearance, role) requires CEO clearance."
+      };
+    }
+    if (user.role === "Employee") {
+      const myEmp = erpStore.tables.tab_employee?.find((e) => e.user_id === user.email);
+      if (doc.name !== myEmp?.name && doc.user_id !== user.email) {
+        return { allowed: false, message: "Access denied: You may only edit your own personal profile contact information." };
+      }
+    }
+  }
+  if (tableName === "tab_utility_bill" || tableName === "tab_kitchen_expense" || tableName === "tab_expense_claim") {
+    if (user.role !== "CEO" && user.role !== "Logistics Admin") {
+      return { allowed: false, message: "Access denied: Only Logistics Admin or CEO may modify financial records." };
+    }
+  }
+  if (tableName === "tab_project" || tableName === "tab_task") {
+    if (user.role !== "CEO" && user.role !== "Supervisor") {
+      return { allowed: false, message: "Access denied: Modifying project or task deliverables requires Supervisory or CEO clearance." };
+    }
+  }
+  if (tableName === "tab_asset" || tableName === "tab_item") {
+    if (user.role !== "CEO" && user.role !== "Logistics Admin") {
+      return { allowed: false, message: "Access denied: Modifying equipment or inventory records requires Logistics Admin or CEO clearance." };
+    }
+  }
+  return { allowed: true };
+}
 doctypeRouter.get("/:doctype", (req, res) => {
   const doctype = String(req.params.doctype);
   const tableName = doctype.startsWith("tab_") ? doctype : `tab_${doctype.toLowerCase()}`;
@@ -51822,29 +51911,28 @@ doctypeRouter.get("/:doctype", (req, res) => {
     return;
   }
   const role = req.user?.role || "Employee";
+  if (!canReadTable(tableName, role)) {
+    res.status(403).json({ success: false, message: "Confidentiality restriction: Access denied." });
+    return;
+  }
   let records = [...table];
   if (role === "Employee") {
-    if (tableName === "tab_employee") {
-      records = records.map((r) => ({
-        ...r,
-        salary_pkr: void 0,
-        cnic: void 0
-      }));
-    } else if (tableName === "tab_attendance") {
-      const myEmp = erpStore.tables.tab_employee.find((e) => e.user_id === req.user?.email);
+    const myEmp = erpStore.tables.tab_employee?.find((e) => e.user_id === req.user?.email);
+    if (tableName === "tab_attendance") {
       if (myEmp) {
-        records = records.filter((r) => r.employee === myEmp.name);
+        records = records.filter((r) => r.employee === myEmp.name || r.employee === myEmp.employee_name);
       }
     } else if (tableName === "tab_leave_application") {
-      const myEmp = erpStore.tables.tab_employee.find((e) => e.user_id === req.user?.email);
       if (myEmp) {
         records = records.filter((r) => r.employee === myEmp.name);
       }
-    } else if (tableName === "tab_expense_claim" || tableName === "tab_utility_bill" || tableName === "tab_kitchen_expense") {
-      res.status(403).json({ success: false, message: "Confidentiality restriction: Access denied." });
-      return;
+    } else if (tableName === "tab_asset_request") {
+      if (myEmp) {
+        records = records.filter((r) => r.requested_by === myEmp.name || r.owner === req.user?.email);
+      }
     }
   }
+  records = records.map((r) => sanitizeDoc(r, tableName, role));
   res.json({
     success: true,
     doctype,
@@ -51856,6 +51944,11 @@ doctypeRouter.get("/:doctype/:id", (req, res) => {
   const doctype = String(req.params.doctype);
   const id = String(req.params.id);
   const tableName = doctype.startsWith("tab_") ? doctype : `tab_${doctype.toLowerCase()}`;
+  const role = req.user?.role || "Employee";
+  if (!canReadTable(tableName, role)) {
+    res.status(403).json({ success: false, message: "Confidentiality restriction: Access denied." });
+    return;
+  }
   const table = erpStore.tables[tableName];
   if (!table) {
     res.status(404).json({ success: false, message: `DocType '${doctype}' not found.` });
@@ -51866,14 +51959,36 @@ doctypeRouter.get("/:doctype/:id", (req, res) => {
     res.status(404).json({ success: false, message: `Document '${id}' not found.` });
     return;
   }
+  if (role === "Employee") {
+    const myEmp = erpStore.tables.tab_employee?.find((e) => e.user_id === req.user?.email);
+    if (tableName === "tab_attendance" && myEmp && doc.employee !== myEmp.name && doc.employee !== myEmp.employee_name) {
+      res.status(403).json({ success: false, message: "Access denied: You may only view your own attendance records." });
+      return;
+    }
+    if (tableName === "tab_leave_application" && myEmp && doc.employee !== myEmp.name) {
+      res.status(403).json({ success: false, message: "Access denied: You may only view your own leave applications." });
+      return;
+    }
+    if (tableName === "tab_asset_request" && myEmp && doc.requested_by !== myEmp.name && doc.owner !== req.user?.email) {
+      res.status(403).json({ success: false, message: "Access denied: You may only view your own equipment requests." });
+      return;
+    }
+  }
+  const sanitized = sanitizeDoc(doc, tableName, role);
   res.json({
     success: true,
-    doc
+    doc: sanitized
   });
 });
 doctypeRouter.post("/:doctype", (req, res) => {
   const doctype = String(req.params.doctype);
   const tableName = doctype.startsWith("tab_") ? doctype : `tab_${doctype.toLowerCase()}`;
+  const role = req.user?.role || "Employee";
+  const creationCheck = canCreateTable(tableName, role);
+  if (!creationCheck.allowed) {
+    res.status(403).json({ success: false, message: creationCheck.message });
+    return;
+  }
   const table = erpStore.tables[tableName];
   if (!table) {
     res.status(404).json({ success: false, message: `DocType '${doctype}' not found.` });
@@ -51895,6 +52010,11 @@ doctypeRouter.post("/:doctype", (req, res) => {
   const name = erpStore.getNextSeries(prefix);
   const now = (/* @__PURE__ */ new Date()).toISOString().replace("T", " ").substring(0, 19);
   const { phases, ...bodyData } = req.body;
+  if (tableName === "tab_asset_request" && role === "Employee") {
+    const myEmp = erpStore.tables.tab_employee?.find((e) => e.user_id === req.user?.email);
+    bodyData.requested_by = myEmp?.name || bodyData.requested_by;
+    bodyData.requested_by_name = myEmp?.employee_name || req.user?.fullName;
+  }
   const newDoc = {
     name,
     creation: now,
@@ -51924,14 +52044,30 @@ doctypeRouter.post("/:doctype", (req, res) => {
   res.status(201).json({
     success: true,
     message: `${doctype} ${name} created.`,
-    doc: newDoc
+    doc: sanitizeDoc(newDoc, tableName, role)
   });
 });
 doctypeRouter.post("/tab_asset_request/:id/approve", (req, res) => {
+  const role = req.user?.role || "Employee";
+  if (!hasRole(req.user, "Supervisor", "CEO")) {
+    res.status(403).json({
+      success: false,
+      message: "Access denied: Equipment checkout approvals require Supervisor or CEO clearance."
+    });
+    return;
+  }
   const id = String(req.params.id);
   const request = erpStore.tables.tab_asset_request?.find((r) => r.name === id);
   if (!request) {
     res.status(404).json({ success: false, message: "Request not found." });
+    return;
+  }
+  const myEmp = erpStore.tables.tab_employee?.find((e) => e.user_id === req.user?.email);
+  if (request.owner === req.user?.email || myEmp && request.requested_by === myEmp.name || request.requested_by?.toLowerCase() === req.user?.username.toLowerCase()) {
+    res.status(403).json({
+      success: false,
+      message: "Security restriction: Self-approval of equipment checkout requests is strictly prohibited."
+    });
     return;
   }
   const asset = erpStore.tables.tab_asset?.find((a) => a.name === request.asset);
@@ -51961,6 +52097,13 @@ doctypeRouter.post("/tab_asset_request/:id/approve", (req, res) => {
   });
 });
 doctypeRouter.post("/tab_asset_request/:id/reject", (req, res) => {
+  if (!hasRole(req.user, "Supervisor", "CEO")) {
+    res.status(403).json({
+      success: false,
+      message: "Access denied: Equipment rejections require Supervisor or CEO clearance."
+    });
+    return;
+  }
   const id = String(req.params.id);
   const { reason } = req.body;
   const request = erpStore.tables.tab_asset_request?.find((r) => r.name === id);
@@ -51978,6 +52121,13 @@ doctypeRouter.post("/tab_asset_request/:id/reject", (req, res) => {
   });
 });
 doctypeRouter.post("/tab_asset/:id/return", (req, res) => {
+  if (!hasRole(req.user, "Logistics Admin", "Supervisor", "CEO")) {
+    res.status(403).json({
+      success: false,
+      message: "Access denied: Equipment returns to inventory require Logistics Admin or Supervisory clearance."
+    });
+    return;
+  }
   const id = String(req.params.id);
   const asset = erpStore.tables.tab_asset?.find((a) => a.name === id);
   if (!asset) {
@@ -51995,6 +52145,13 @@ doctypeRouter.post("/tab_asset/:id/return", (req, res) => {
   });
 });
 doctypeRouter.post("/tab_asset/:id/status", (req, res) => {
+  if (!hasRole(req.user, "Logistics Admin", "Supervisor", "CEO")) {
+    res.status(403).json({
+      success: false,
+      message: "Access denied: Modifying equipment operational status requires Logistics Admin or Supervisory clearance."
+    });
+    return;
+  }
   const id = String(req.params.id);
   const { status } = req.body;
   const asset = erpStore.tables.tab_asset?.find((a) => a.name === id);
@@ -52019,9 +52176,18 @@ doctypeRouter.patch("/:doctype/:id", (req, res) => {
   const id = String(req.params.id);
   const tableName = doctype.startsWith("tab_") ? doctype : `tab_${doctype.toLowerCase()}`;
   const table = erpStore.tables[tableName];
-  const doc = table?.find((d) => d.name === id);
+  if (!table) {
+    res.status(404).json({ success: false, message: `DocType '${doctype}' not found.` });
+    return;
+  }
+  const doc = table.find((d) => d.name === id);
   if (!doc) {
     res.status(404).json({ success: false, message: "Document not found." });
+    return;
+  }
+  const modificationCheck = canModifyDoc(tableName, doc, req.user, req.body);
+  if (!modificationCheck.allowed) {
+    res.status(403).json({ success: false, message: modificationCheck.message });
     return;
   }
   Object.assign(doc, req.body, {
@@ -52031,7 +52197,7 @@ doctypeRouter.patch("/:doctype/:id", (req, res) => {
   res.json({
     success: true,
     message: `${id} updated successfully.`,
-    doc
+    doc: sanitizeDoc(doc, tableName, req.user?.role || "Employee")
   });
 });
 doctypeRouter.post("/:doctype/:id/submit", (req, res) => {
@@ -52039,9 +52205,22 @@ doctypeRouter.post("/:doctype/:id/submit", (req, res) => {
   const id = String(req.params.id);
   const tableName = doctype.startsWith("tab_") ? doctype : `tab_${doctype.toLowerCase()}`;
   const table = erpStore.tables[tableName];
-  const doc = table?.find((d) => d.name === id);
+  const role = req.user?.role || "Employee";
+  if (!table) {
+    res.status(404).json({ success: false, message: `DocType '${doctype}' not found.` });
+    return;
+  }
+  const doc = table.find((d) => d.name === id);
   if (!doc) {
     res.status(404).json({ success: false, message: "Document not found." });
+    return;
+  }
+  if (["tab_utility_bill", "tab_kitchen_expense", "tab_expense_claim"].includes(tableName) && !hasRole(req.user, "CEO", "Logistics Admin")) {
+    res.status(403).json({ success: false, message: "Access denied: Only Logistics Admin or CEO may submit financial invoices." });
+    return;
+  }
+  if (tableName === "tab_employee" && role !== "CEO") {
+    res.status(403).json({ success: false, message: "Access denied: Only CEO may submit and lock employee records." });
     return;
   }
   doc.docstatus = 1;
@@ -52050,7 +52229,7 @@ doctypeRouter.post("/:doctype/:id/submit", (req, res) => {
   res.json({
     success: true,
     message: `${id} submitted and locked.`,
-    doc
+    doc: sanitizeDoc(doc, tableName, role)
   });
 });
 doctypeRouter.post("/tab_task_component/:id/toggle", (req, res) => {
