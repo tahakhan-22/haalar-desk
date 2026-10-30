@@ -47,7 +47,18 @@ import {
   Calendar,
   Send,
   Eye,
-  Edit3
+  Edit3,
+  Sun,
+  Moon,
+  Bell,
+  Sparkles,
+  FolderKanban,
+  LayoutDashboard,
+  MoreVertical,
+  Heart,
+  ThumbsUp,
+  Settings,
+  Filter
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -136,6 +147,87 @@ export default function App() {
     const hours = now.getHours();
     return hours >= 9 && hours < 16;
   }, [demoTimeOverride]);
+
+  // Vibrant Dashboard States (Matching the Executive Lively UI Reference)
+  const [timelineTab, setTimelineTab] = useState<'Day' | 'Week' | 'Month' | 'Year'>('Day');
+  const [projectStatusFilter, setProjectStatusFilter] = useState<'Ongoing' | 'Pending'>('Ongoing');
+  const [darkMode, setDarkMode] = useState<boolean>(false);
+  const [activeNavTab, setActiveNavTab] = useState<'dashboard' | 'my_tasks' | 'activities' | 'projects' | 'team' | 'messages' | 'schedules'>('dashboard');
+  const [classicRegistersOpen, setClassicRegistersOpen] = useState<boolean>(false);
+  const [quickChatUser, setQuickChatUser] = useState<any | null>(null);
+  const [chatMessageText, setChatMessageText] = useState<string>('');
+  const [chatMessages, setChatMessages] = useState<Array<{ sender: string; text: string; time: string }>>([
+    { sender: 'Zainab', text: 'Hey! The telemetry ECU firmware dual-bank CRC test passed with 2.4ms latency.', time: '11:42 AM' },
+    { sender: 'You', text: 'Awesome work Zainab. Have you hooked it up to the bench spectrum analyzer?', time: '11:44 AM' },
+    { sender: 'Zainab', text: 'Yes, Taha and I are running the 100MHz harmonic scan right now.', time: '11:45 AM' }
+  ]);
+  const [activitiesList, setActivitiesList] = useState([
+    {
+      id: 1,
+      user: 'Theresa Webb',
+      role: 'Lead Designer & Avionics UI',
+      initials: 'TW',
+      time: '21 mins ago',
+      action: 'Completed the flight controller telemetry dashboard & DRC check',
+      likes: 5,
+      thumbs: 8,
+      userLiked: false,
+      userThumbed: false
+    },
+    {
+      id: 2,
+      user: 'Marvin McKinney',
+      role: 'Hardware Prototyping Lead',
+      initials: 'MM',
+      time: '32 mins ago',
+      action: 'Added a new calibration profile for Keysight 13.6GHz Analyzer',
+      likes: 3,
+      thumbs: 1,
+      userLiked: false,
+      userThumbed: false
+    },
+    {
+      id: 3,
+      user: 'Guy Hawkins',
+      role: 'Embedded Systems Specialist',
+      initials: 'GH',
+      time: '1 hr ago',
+      action: 'Submitted equipment checkout for Cleanroom Flir Thermal Camera',
+      likes: 2,
+      thumbs: 4,
+      userLiked: false,
+      userThumbed: false
+    }
+  ]);
+
+  const handleToggleReaction = (id: number, type: 'like' | 'thumb') => {
+    setActivitiesList(prev => prev.map(item => {
+      if (item.id !== id) return item;
+      if (type === 'like') {
+        return {
+          ...item,
+          likes: item.userLiked ? item.likes - 1 : item.likes + 1,
+          userLiked: !item.userLiked
+        };
+      } else {
+        return {
+          ...item,
+          thumbs: item.userThumbed ? item.thumbs - 1 : item.thumbs + 1,
+          userThumbed: !item.userThumbed
+        };
+      }
+    }));
+  };
+
+  const handleSendChatMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatMessageText.trim()) return;
+    setChatMessages(prev => [
+      ...prev,
+      { sender: 'You', text: chatMessageText.trim(), time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
+    ]);
+    setChatMessageText('');
+  };
 
   // Fetch workspaces & metrics whenever token or user changes
   useEffect(() => {
@@ -708,43 +800,54 @@ export default function App() {
         </div>
       )}
 
-      {/* TOP DESK NAVIGATION BAR (ERPNEXT AWESOMEBAR) */}
-      <header className="h-12 bg-white border-b border-gray-200 flex items-center justify-between px-4 sticky top-0 z-30 shadow-xs">
-        <div className="flex items-center space-x-3">
+      {/* TOP DESK NAVIGATION BAR (LIVELY EXECUTIVE UI) */}
+      <header className="h-16 bg-white border-b border-slate-100 flex items-center justify-between px-6 sticky top-0 z-30 shadow-xs">
+        <div className="flex items-center space-x-4">
           {/* Sidebar Toggle Button */}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             title={sidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}
-            className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-600 transition"
+            className="p-2 hover:bg-slate-100 rounded-xl text-slate-500 transition"
           >
             <Menu className="w-4 h-4" />
           </button>
 
-          <div className="w-7 h-7 rounded bg-blue-600 flex items-center justify-center text-white font-bold text-xs">
-            H
+          {/* Geometric lively logo */}
+          <div
+            className="flex items-center space-x-2.5 cursor-pointer"
+            onClick={() => {
+              setCurrentView('workspace');
+              setActiveNavTab('dashboard');
+            }}
+          >
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-rose-500 flex items-center justify-center text-white shadow-sm shadow-indigo-500/25">
+              <Sparkles className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <span className="text-sm font-extrabold text-slate-900 tracking-tight block leading-tight">
+                Designers AV <span className="text-blue-600 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-50 ml-1">Desk</span>
+              </span>
+              <span className="text-[10px] font-medium text-slate-400">
+                Haalar Aerospace
+              </span>
+            </div>
           </div>
-          <span className="text-sm font-bold text-gray-900 tracking-tight hidden sm:inline">
-            Haalar Desk
-          </span>
-          <span className="text-[11px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded border border-gray-200 font-mono">
-            {currentUser.role}
-          </span>
         </div>
 
-        {/* Search Bar / Awesomebar with live functional autocomplete */}
-        <div className="flex-1 max-w-md mx-4 relative">
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-gray-400" />
+        {/* Search Bar / Awesomebar with lively pill styling */}
+        <div className="flex-1 max-w-xl mx-6 relative hidden sm:block">
+          <div className="relative flex items-center">
+            <Search className="w-4 h-4 absolute left-4 text-slate-400 pointer-events-none" />
             <input
               type="text"
-              placeholder="Search or jump to DocType, Task, Equipment, Employee..."
+              placeholder="What are you looking for ?"
               value={searchQuery}
               onFocus={() => setSearchDropdownOpen(true)}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
                 setSearchDropdownOpen(true);
               }}
-              className="w-full bg-gray-50 hover:bg-gray-100 focus:bg-white text-xs pl-8 pr-7 py-1.5 rounded-md border border-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition"
+              className="w-full bg-slate-50/90 hover:bg-slate-100 focus:bg-white text-xs pl-11 pr-24 py-2.5 rounded-full border border-slate-200/80 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition text-slate-700 placeholder-slate-400"
             />
             {searchQuery && (
               <button
@@ -752,11 +855,17 @@ export default function App() {
                   setSearchQuery('');
                   setSearchDropdownOpen(false);
                 }}
-                className="absolute right-2.5 top-2.5 text-gray-400 hover:text-gray-600"
+                className="absolute right-20 text-slate-400 hover:text-slate-600 p-1"
               >
-                <X className="w-3 h-3" />
+                <X className="w-3.5 h-3.5" />
               </button>
             )}
+            <button
+              onClick={() => setSearchDropdownOpen(true)}
+              className="absolute right-1.5 bg-[#3949f5] hover:bg-blue-700 text-white px-5 py-1.5 rounded-full text-xs font-semibold shadow-sm transition active:scale-95"
+            >
+              Search
+            </button>
           </div>
 
           {/* Autocomplete Dropdown Popover */}
@@ -891,21 +1000,62 @@ export default function App() {
           )}
         </div>
 
-        {/* User Info & Logout */}
-        <div className="flex items-center space-x-3">
-          <div className="text-right hidden md:block">
-            <span className="text-xs font-semibold text-gray-900 block leading-tight">
-              {currentUser.fullName}
-            </span>
-            <span className="text-[10px] text-gray-500 font-mono">
-              Clearance Level {currentUser.securityClearance}
-            </span>
+        {/* User Info & Quick Controls */}
+        <div className="flex items-center space-x-3.5">
+          {/* Theme Pill Toggle */}
+          <button
+            onClick={() => {
+              setDarkMode(!darkMode);
+              showToast(darkMode ? 'Switched to Light UI' : 'Switched to Dark Theme', 'success');
+            }}
+            className="flex items-center space-x-1 p-1 bg-slate-100 hover:bg-slate-200/80 rounded-full text-slate-600 transition"
+            title="Toggle Light / Dark Mode"
+          >
+            <div className={`p-1 rounded-full ${!darkMode ? 'bg-white shadow-xs text-amber-500' : 'text-slate-400'}`}>
+              <Sun className="w-3.5 h-3.5" />
+            </div>
+            <div className={`p-1 rounded-full ${darkMode ? 'bg-slate-800 shadow-xs text-blue-400' : 'text-slate-400'}`}>
+              <Moon className="w-3.5 h-3.5" />
+            </div>
+          </button>
+
+          {/* Notification Bell with Badge */}
+          <div className="relative">
+            <button
+              onClick={() => showToast('All aerospace systems nominal. No unread critical flags.', 'success')}
+              className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-full transition relative"
+              title="Notifications"
+            >
+              <Bell className="w-4 h-4" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white" />
+            </button>
           </div>
 
+          {/* User Profile Chip */}
+          <div className="flex items-center space-x-2.5 pl-2 border-l border-slate-200">
+            <div className="relative">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 p-0.5 shadow-sm">
+                <div className="w-full h-full rounded-full bg-white flex items-center justify-center font-bold text-xs text-indigo-700">
+                  {currentUser.fullName.split(' ')[0][0]}
+                </div>
+              </div>
+              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
+            </div>
+            <div className="text-left hidden md:block leading-tight">
+              <span className="text-xs font-bold text-slate-900 block">
+                {currentUser.fullName}
+              </span>
+              <span className="text-[10px] text-slate-400 block font-normal">
+                {currentUser.email}
+              </span>
+            </div>
+          </div>
+
+          {/* Logout Button */}
           <button
             onClick={handleLogout}
             title="Log Out"
-            className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition"
+            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition"
           >
             <LogOut className="w-4 h-4" />
           </button>
@@ -914,151 +1064,195 @@ export default function App() {
 
       {/* MAIN WORKSPACE LAYOUT */}
       <div className="flex flex-1 overflow-hidden">
-        {/* COLLAPSIBLE LEFT WORKSPACE SIDEBAR */}
+        {/* COLLAPSIBLE LEFT WORKSPACE SIDEBAR (LIVELY UI) */}
         {sidebarOpen && (
-          <aside className="w-60 bg-white border-r border-gray-200 p-3 space-y-1 flex-shrink-0 overflow-y-auto transition-all duration-300">
-            <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider px-3 py-1.5">
-              Workspaces
-            </div>
-
-            {workspaceData?.workspaces.map((ws: any) => (
+          <aside className="w-56 bg-white border-r border-slate-100 p-3.5 space-y-4 flex-shrink-0 overflow-y-auto transition-all duration-300 flex flex-col justify-between">
+            <div className="space-y-1">
+              {/* My Tasks with blue badge 2 */}
               <button
-                key={ws.id}
                 onClick={() => {
-                  setActiveWorkspace(ws.id);
+                  setActiveNavTab('my_tasks');
+                  openDocTypeList('tab_task');
+                }}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition ${
+                  activeNavTab === 'my_tasks'
+                    ? 'bg-blue-50 text-blue-700 font-bold'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <CheckSquare className="w-4 h-4 text-slate-400" />
+                  <span>My Tasks</span>
+                </div>
+                <span className="w-5 h-5 rounded-full bg-blue-500 text-white text-[10px] font-bold flex items-center justify-center shadow-xs">
+                  2
+                </span>
+              </button>
+
+              {/* Activities with coral badge 6 */}
+              <button
+                onClick={() => {
+                  setActiveNavTab('activities');
+                  setCurrentView('workspace');
+                  showToast('Viewing Team Activities & Milestones', 'success');
+                }}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition ${
+                  activeNavTab === 'activities'
+                    ? 'bg-blue-50 text-blue-700 font-bold'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <Zap className="w-4 h-4 text-slate-400" />
+                  <span>Activities</span>
+                </div>
+                <span className="w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center shadow-xs">
+                  6
+                </span>
+              </button>
+
+              {/* Dashboard (Active) */}
+              <button
+                onClick={() => {
+                  setActiveNavTab('dashboard');
                   setCurrentView('workspace');
                   setActiveDocType(null);
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition ${
-                  activeWorkspace === ws.id && currentView === 'workspace'
-                    ? 'bg-blue-50 text-blue-700 font-semibold'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition ${
+                  activeNavTab === 'dashboard' && currentView === 'workspace'
+                    ? 'bg-blue-50 text-blue-700 shadow-xs'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                 }`}
               >
-                <div className="flex items-center space-x-2.5">
-                  {ws.id === 'executive' ? (
-                    <Building2 className="w-4 h-4 text-blue-600" />
-                  ) : ws.id === 'supervisor' ? (
-                    <UserCheck className="w-4 h-4 text-amber-600" />
-                  ) : ws.id === 'operations' ? (
-                    <Boxes className="w-4 h-4 text-purple-600" />
-                  ) : (
-                    <User className="w-4 h-4 text-emerald-600" />
-                  )}
-                  <span>{ws.title}</span>
-                </div>
-                <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
+                <LayoutDashboard className={`w-4 h-4 ${activeNavTab === 'dashboard' ? 'text-blue-600' : 'text-slate-400'}`} />
+                <span>Dashboard</span>
               </button>
-            ))}
 
-            {/* Master Registers */}
-            <div className="pt-4 text-[11px] font-semibold text-gray-400 uppercase tracking-wider px-3 py-1.5">
-              Master Registers
+              {/* Projects */}
+              <button
+                onClick={() => {
+                  setActiveNavTab('projects');
+                  setCurrentView('full_gantt');
+                }}
+                className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition ${
+                  activeNavTab === 'projects' || currentView === 'full_gantt'
+                    ? 'bg-blue-50 text-blue-700 font-bold'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+              >
+                <FolderKanban className="w-4 h-4 text-slate-400" />
+                <span>Projects</span>
+              </button>
+
+              {/* Team Members */}
+              <button
+                onClick={() => {
+                  setActiveNavTab('team');
+                  setCurrentView('all_employees');
+                }}
+                className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition ${
+                  activeNavTab === 'team' || currentView === 'all_employees'
+                    ? 'bg-blue-50 text-blue-700 font-bold'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+              >
+                <Users className="w-4 h-4 text-slate-400" />
+                <span>Team Members</span>
+              </button>
+
+              {/* Messages with red badge 1 */}
+              <button
+                onClick={() => {
+                  setActiveNavTab('messages');
+                  setQuickChatUser({ name: 'Zainab', sub: 'Lead Firmware', color: 'from-amber-400 to-orange-500' });
+                }}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition ${
+                  activeNavTab === 'messages'
+                    ? 'bg-blue-50 text-blue-700 font-bold'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <MessageSquare className="w-4 h-4 text-slate-400" />
+                  <span>Messages</span>
+                </div>
+                <span className="w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center shadow-xs">
+                  1
+                </span>
+              </button>
+
+              {/* Schedules / Attendance */}
+              <button
+                onClick={() => {
+                  setActiveNavTab('schedules');
+                  openDocTypeList('tab_attendance');
+                }}
+                className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition ${
+                  activeNavTab === 'schedules'
+                    ? 'bg-blue-50 text-blue-700 font-bold'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+              >
+                <Calendar className="w-4 h-4 text-slate-400" />
+                <span>Schedules</span>
+              </button>
             </div>
 
-            <button
-              onClick={() => openDocTypeList('tab_attendance')}
-              className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-medium transition ${
-                activeDocType === 'tab_attendance'
-                  ? 'bg-blue-50 text-blue-700 font-semibold'
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              <Clock className="w-4 h-4 text-emerald-600" />
-              <span>Attendance Log</span>
-            </button>
-
-            <button
-              onClick={() => openDocTypeList('tab_asset')}
-              className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-medium transition ${
-                activeDocType === 'tab_asset'
-                  ? 'bg-blue-50 text-blue-700 font-semibold'
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              <Wrench className="w-4 h-4 text-indigo-600" />
-              <span>Equipment & Tools</span>
-            </button>
-
-            <button
-              onClick={() => openDocTypeList('tab_task')}
-              className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-medium transition ${
-                activeDocType === 'tab_task'
-                  ? 'bg-blue-50 text-blue-700 font-semibold'
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              <ListTodo className="w-4 h-4 text-blue-600" />
-              <span>Tasks Register</span>
-            </button>
-
-            {(currentUser.role === 'CEO' || currentUser.role === 'Supervisor') && (
+            {/* Bottom Section: Power-User ERP Toggle + Settings & Logout */}
+            <div className="pt-4 border-t border-slate-100 space-y-1">
               <button
-                onClick={() => openDocTypeList('tab_project')}
-                className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-medium transition ${
-                  activeDocType === 'tab_project'
-                    ? 'bg-blue-50 text-blue-700 font-semibold'
-                    : 'text-gray-600 hover:bg-gray-50'
-                }`}
+                onClick={() => setClassicRegistersOpen(!classicRegistersOpen)}
+                className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-[11px] font-semibold text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition"
               >
-                <Layers className="w-4 h-4 text-blue-600" />
-                <span>Classified Projects</span>
+                <span>ERP Classic Registers</span>
+                <ChevronDown className={`w-3.5 h-3.5 transform transition-transform ${classicRegistersOpen ? 'rotate-180' : ''}`} />
               </button>
-            )}
 
-            {(currentUser.role === 'CEO' || currentUser.role === 'Logistics Admin') && (
-              <>
-                <button
-                  onClick={() => openDocTypeList('tab_kitchen_expense')}
-                  className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-medium transition ${
-                    activeDocType === 'tab_kitchen_expense'
-                      ? 'bg-blue-50 text-blue-700 font-semibold'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  <Coffee className="w-4 h-4 text-amber-600" />
-                  <span>Canteen / Kitchen</span>
-                </button>
+              {classicRegistersOpen && (
+                <div className="space-y-1 pl-2 border-l-2 border-slate-100 my-2 text-xs">
+                  <button
+                    onClick={() => openDocTypeList('tab_asset')}
+                    className="w-full text-left px-2 py-1.5 text-slate-600 hover:text-blue-600 font-medium"
+                  >
+                    • Equipment Inventory
+                  </button>
+                  <button
+                    onClick={() => openDocTypeList('tab_item')}
+                    className="w-full text-left px-2 py-1.5 text-slate-600 hover:text-blue-600 font-medium"
+                  >
+                    • Component Stock
+                  </button>
+                  <button
+                    onClick={() => openDocTypeList('tab_utility_bill')}
+                    className="w-full text-left px-2 py-1.5 text-slate-600 hover:text-blue-600 font-medium"
+                  >
+                    • Utility Bills
+                  </button>
+                  <button
+                    onClick={() => openDocTypeList('tab_kitchen_expense')}
+                    className="w-full text-left px-2 py-1.5 text-slate-600 hover:text-blue-600 font-medium"
+                  >
+                    • Cleanroom Pantry
+                  </button>
+                </div>
+              )}
 
-                <button
-                  onClick={() => openDocTypeList('tab_utility_bill')}
-                  className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-medium transition ${
-                    activeDocType === 'tab_utility_bill'
-                      ? 'bg-blue-50 text-blue-700 font-semibold'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  <Zap className="w-4 h-4 text-orange-600" />
-                  <span>Utility Invoices</span>
-                </button>
-
-                <button
-                  onClick={() => openDocTypeList('tab_item')}
-                  className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-medium transition ${
-                    activeDocType === 'tab_item'
-                      ? 'bg-blue-50 text-blue-700 font-semibold'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  <Boxes className="w-4 h-4 text-purple-600" />
-                  <span>Component Stock</span>
-                </button>
-              </>
-            )}
-
-            {currentUser.role === 'CEO' && (
               <button
-                onClick={() => openDocTypeList('tab_employee')}
-                className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-medium transition ${
-                  activeDocType === 'tab_employee'
-                    ? 'bg-blue-50 text-blue-700 font-semibold'
-                    : 'text-gray-600 hover:bg-gray-50'
-                }`}
+                onClick={() => showToast('Settings: High-Assurance Cleanroom Network (Humak Sector H-9)', 'success')}
+                className="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition"
               >
-                <User className="w-4 h-4 text-gray-700" />
-                <span>Employee Directory</span>
+                <Settings className="w-4 h-4 text-slate-400" />
+                <span>Settings</span>
               </button>
-            )}
+
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition"
+              >
+                <LogOut className="w-4 h-4 text-slate-400" />
+                <span>Logout</span>
+              </button>
+            </div>
           </aside>
         )}
 
@@ -1923,22 +2117,25 @@ export default function App() {
               VIEW 6: NORMAL WORKSPACE DASHBOARD VIEW
               ========================================================================= */}
           {currentView === 'workspace' && (
-            <div className="space-y-6 max-w-6xl">
-              {/* Workspace Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900 tracking-tight">
-                    {activeWorkspace === 'executive'
-                      ? 'Executive Directorate Desk'
-                      : activeWorkspace === 'supervisor'
-                      ? 'Engineering Supervisor Desk'
-                      : activeWorkspace === 'operations'
-                      ? 'Logistics, Warehouse & Facility Operations'
-                      : 'My Employee Workspace'}
-                  </h1>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    Haalar Services — Humak Industrial Facility, Islamabad
-                  </p>
+            <div className="space-y-6 max-w-[1550px] mx-auto pb-8">
+              {/* Top Lively Bar: Welcome, Quick Clock-In & Punctuality Guard */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-3xl border border-slate-100 shadow-xs">
+                <div className="flex items-center space-x-3.5">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-extrabold text-sm shadow-sm shadow-blue-500/20">
+                    {currentUser.fullName.split(' ')[0][0]}
+                  </div>
+                  <div>
+                    <h1 className="text-base font-extrabold text-slate-900 tracking-tight flex items-center space-x-2">
+                      <span>Welcome back, {currentUser.fullName.split(' ')[0]}</span>
+                      <span className="text-lg">👋</span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+                        {currentUser.role}
+                      </span>
+                    </h1>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Haalar Aerospace Solutions — Humak Cleanroom Complex, Islamabad
+                    </p>
+                  </div>
                 </div>
 
                 {/* Clock In / Out with 9 AM – 4 PM Working Hours Check */}
@@ -1947,10 +2144,10 @@ export default function App() {
                     onClick={() => handleClockAction('IN')}
                     disabled={!isWorkingHours}
                     title={!isWorkingHours ? 'Punches permitted strictly between 09:00 AM and 04:00 PM' : 'Record Check-In'}
-                    className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 shadow-sm transition ${
+                    className={`px-4 py-2 rounded-2xl text-xs font-bold flex items-center space-x-1.5 shadow-sm transition ${
                       isWorkingHours
-                        ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                        : 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed'
+                        ? 'bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95'
+                        : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
                     }`}
                   >
                     <Clock className="w-3.5 h-3.5" />
@@ -1961,10 +2158,10 @@ export default function App() {
                     onClick={() => handleClockAction('OUT')}
                     disabled={!isWorkingHours}
                     title={!isWorkingHours ? 'Punches permitted strictly between 09:00 AM and 04:00 PM' : 'Record Check-Out'}
-                    className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+                    className={`px-4 py-2 rounded-2xl text-xs font-bold transition ${
                       isWorkingHours
-                        ? 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                        : 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed'
+                        ? 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 active:scale-95'
+                        : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
                     }`}
                   >
                     <span>Clock Out</span>
@@ -1975,10 +2172,10 @@ export default function App() {
                     type="button"
                     onClick={() => setDemoTimeOverride(!demoTimeOverride)}
                     title="Toggle demo override for testing clock-in outside 9am-4pm"
-                    className={`px-2 py-1 rounded text-[10px] font-mono font-bold border transition ${
+                    className={`px-2.5 py-1.5 rounded-xl text-[10px] font-mono font-bold border transition ${
                       demoTimeOverride
                         ? 'bg-blue-50 text-blue-700 border-blue-200'
-                        : 'bg-gray-100 text-gray-500 border-gray-200'
+                        : 'bg-slate-100 text-slate-500 border-slate-200'
                     }`}
                   >
                     {demoTimeOverride ? '9am-4pm: Active (Demo)' : '9am-4pm: Enforced'}
@@ -1986,32 +2183,703 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Number Cards Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {workspaceData?.workspaces
-                  .find((w: any) => w.id === activeWorkspace)
-                  ?.numberCards.map((card: any, idx: number) => (
+              {/* =========================================================================
+                  LIVELY EXECUTIVE UI: EXACT MATCH TO STAKEHOLDER MOCKUP
+                  ========================================================================= */}
+              <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+                
+                {/* LEFT / CENTER COLUMN (COLUMNS 1 TO 8) */}
+                <div className="xl:col-span-8 space-y-6">
+                  
+                  {/* ROW 1: MEETING & TASK HERO CARDS */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    
+                    {/* Hero Card 1: Electric Indigo Card */}
+                    <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 rounded-3xl p-5 text-white shadow-xl shadow-indigo-500/15 flex flex-col justify-between h-48 relative overflow-hidden group">
+                      <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/10 blur-xl pointer-events-none" />
+                      
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="font-bold text-sm tracking-tight text-white flex items-center space-x-1.5">
+                            <span>Design Meeting</span>
+                          </h3>
+                          <div className="flex items-center space-x-1.5">
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/20 backdrop-blur-xs text-white border border-white/20">
+                              Ongoing
+                            </span>
+                            <button className="text-white/60 hover:text-white p-0.5">
+                              <MoreVertical className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                        <p className="text-xs text-blue-100/90 line-clamp-2 leading-relaxed">
+                          Amet minim mollit non deserunt ullamco est sit aliqua dolor do
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2">
+                        <div className="flex items-center -space-x-1.5">
+                          <div className="w-7 h-7 rounded-full bg-amber-400 border-2 border-indigo-600 flex items-center justify-center text-[10px] font-bold text-amber-900" title="Zainab">ZK</div>
+                          <div className="w-7 h-7 rounded-full bg-emerald-400 border-2 border-indigo-600 flex items-center justify-center text-[10px] font-bold text-emerald-900" title="Taha">TA</div>
+                          <div className="w-7 h-7 rounded-full bg-purple-400 border-2 border-indigo-600 flex items-center justify-center text-[10px] font-bold text-purple-900" title="Nouman">NF</div>
+                          <span className="pl-2.5 text-[10px] text-blue-100 font-semibold">+2 others</span>
+                        </div>
+                        <button
+                          onClick={() => showToast('Connecting to Design Review session...', 'success')}
+                          className="bg-white hover:bg-blue-50 text-indigo-700 px-4 py-1.5 rounded-full text-xs font-bold shadow-sm transition active:scale-95"
+                        >
+                          Leave
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Hero Card 2: White Meeting Card with Mint Tag */}
+                    <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 flex flex-col justify-between h-48 hover:shadow-md transition">
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="font-bold text-sm tracking-tight text-slate-900">
+                            Client Meeting
+                          </h3>
+                          <div className="flex items-center space-x-1.5">
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200/60">
+                              09:30am
+                            </span>
+                            <button className="text-slate-400 hover:text-slate-600 p-0.5">
+                              <MoreVertical className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                        <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                          Amet minim mollit non deserunt ullamco est sit aliqua dolor do
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2">
+                        <div className="flex items-center -space-x-1.5">
+                          <div className="w-7 h-7 rounded-full bg-rose-400 border-2 border-white flex items-center justify-center text-[10px] font-bold text-white" title="Usman">US</div>
+                          <div className="w-7 h-7 rounded-full bg-blue-500 border-2 border-white flex items-center justify-center text-[10px] font-bold text-white" title="Sohail">SH</div>
+                        </div>
+                        <button
+                          onClick={() => showToast('Opening meeting briefing room...', 'success')}
+                          className="text-emerald-600 hover:text-emerald-700 font-bold text-xs hover:underline flex items-center space-x-1 transition"
+                        >
+                          <span>Join Now</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Hero Card 3: Dashed + Add New Task Card */}
                     <div
-                      key={idx}
-                      className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm"
+                      onClick={() => setShowModal('tab_task')}
+                      className="bg-white/80 border-2 border-dashed border-emerald-300 hover:border-emerald-500 hover:bg-emerald-50/20 rounded-3xl p-5 flex flex-col items-center justify-center cursor-pointer transition-all group h-48"
                     >
-                      <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider block mb-1">
-                        {card.label}
+                      <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white flex items-center justify-center transition mb-3 shadow-xs">
+                        <Plus className="w-6 h-6 transition-transform group-hover:scale-110" />
+                      </div>
+                      <span className="text-xs font-bold text-emerald-600 group-hover:text-emerald-700">
+                        Add New Task
                       </span>
-                      <span className="text-xl font-bold text-gray-900 font-mono block">
-                        {card.value}
+                      <span className="text-[10px] text-slate-400 mt-0.5">
+                        Specify WBS deliverables
                       </span>
                     </div>
-                  ))}
+
+                  </div>
+
+                  {/* ROW 2: "PROJECTS" SECTION WITH VIBRANT PROGRESS BARS */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-lg font-extrabold text-slate-900 tracking-tight">
+                        Projects
+                      </h2>
+                      {/* Ongoing / Pending Pill Switch */}
+                      <div className="flex items-center space-x-1 bg-slate-100/90 p-1 rounded-full">
+                        <button
+                          onClick={() => setProjectStatusFilter('Ongoing')}
+                          className={`px-4 py-1 rounded-full text-xs font-bold transition ${
+                            projectStatusFilter === 'Ongoing'
+                              ? 'bg-[#3949f5] text-white shadow-xs'
+                              : 'text-slate-500 hover:text-slate-800'
+                          }`}
+                        >
+                          Ongoing
+                        </button>
+                        <button
+                          onClick={() => setProjectStatusFilter('Pending')}
+                          className={`px-4 py-1 rounded-full text-xs font-bold transition ${
+                            projectStatusFilter === 'Pending'
+                              ? 'bg-[#3949f5] text-white shadow-xs'
+                              : 'text-slate-500 hover:text-slate-800'
+                          }`}
+                        >
+                          Pending
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 3 Horizontal Project Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      
+                      {/* Project Card 1: Coral / Pink */}
+                      <div
+                        onClick={() => setCurrentView('full_gantt')}
+                        className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md hover:border-slate-200 transition cursor-pointer"
+                      >
+                        <div>
+                          <div className="flex items-start space-x-3 mb-3">
+                            <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0">
+                              <Sparkles className="w-5 h-5" />
+                            </div>
+                            <div className="min-w-0">
+                              <h4 className="font-bold text-xs text-slate-900 truncate">
+                                {projectStatusFilter === 'Ongoing' ? 'Healthmetro medical app design' : 'Radar DSP Core Architecture'}
+                              </h4>
+                              <span className="text-[11px] text-slate-400 block">
+                                Product Design
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center space-x-1.5 text-[11px] text-slate-500 mb-4">
+                            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                            <span>Due Date: 07 Jun 2026</span>
+                          </div>
+
+                          {/* Coral Progress Bar */}
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between text-[11px] font-bold">
+                              <span className="text-slate-500">Progress</span>
+                              <span className="text-slate-800">35%</span>
+                            </div>
+                            <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                              <div className="h-full bg-gradient-to-r from-rose-500 to-pink-500 rounded-full" style={{ width: '35%' }} />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-4 mt-3 border-t border-slate-50">
+                          <div className="flex items-center -space-x-1.5">
+                            <div className="w-6 h-6 rounded-full bg-purple-400 border-2 border-white text-[9px] font-bold text-white flex items-center justify-center">ZK</div>
+                            <div className="w-6 h-6 rounded-full bg-blue-400 border-2 border-white text-[9px] font-bold text-white flex items-center justify-center">TA</div>
+                            <span className="pl-2.5 text-[10px] text-slate-400 font-medium">+02 others</span>
+                          </div>
+                          <div className="w-6 h-6 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-slate-100">
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Project Card 2: Emerald Green */}
+                      <div
+                        onClick={() => setCurrentView('full_gantt')}
+                        className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md hover:border-slate-200 transition cursor-pointer"
+                      >
+                        <div>
+                          <div className="flex items-start space-x-3 mb-3">
+                            <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                              <Layers className="w-5 h-5" />
+                            </div>
+                            <div className="min-w-0">
+                              <h4 className="font-bold text-xs text-slate-900 truncate">
+                                {projectStatusFilter === 'Ongoing' ? 'NFT Profile Art' : 'Telemetry RF Transceiver Link'}
+                              </h4>
+                              <span className="text-[11px] text-slate-400 block">
+                                Illustration
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center space-x-1.5 text-[11px] text-slate-500 mb-4">
+                            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                            <span>Due Date: 18 Jun 2026</span>
+                          </div>
+
+                          {/* Emerald Green Progress Bar */}
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between text-[11px] font-bold">
+                              <span className="text-slate-500">Progress</span>
+                              <span className="text-slate-800">70%</span>
+                            </div>
+                            <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                              <div className="h-full bg-gradient-to-r from-emerald-400 to-green-500 rounded-full" style={{ width: '70%' }} />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-4 mt-3 border-t border-slate-50">
+                          <div className="flex items-center -space-x-1.5">
+                            <div className="w-6 h-6 rounded-full bg-amber-400 border-2 border-white text-[9px] font-bold text-amber-900 flex items-center justify-center">NF</div>
+                            <div className="w-6 h-6 rounded-full bg-emerald-400 border-2 border-white text-[9px] font-bold text-emerald-900 flex items-center justify-center">HM</div>
+                            <span className="pl-2.5 text-[10px] text-slate-400 font-medium">+04 others</span>
+                          </div>
+                          <div className="w-6 h-6 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-slate-100">
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Project Card 3: Sunflower Yellow / Gold */}
+                      <div
+                        onClick={() => setCurrentView('full_gantt')}
+                        className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md hover:border-slate-200 transition cursor-pointer"
+                      >
+                        <div>
+                          <div className="flex items-start space-x-3 mb-3">
+                            <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0">
+                              <Briefcase className="w-5 h-5" />
+                            </div>
+                            <div className="min-w-0">
+                              <h4 className="font-bold text-xs text-slate-900 truncate">
+                                {projectStatusFilter === 'Ongoing' ? 'Sportlab Branding Material' : 'Payload Gimbal Mechanics'}
+                              </h4>
+                              <span className="text-[11px] text-slate-400 block">
+                                Visual Identity
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center space-x-1.5 text-[11px] text-slate-500 mb-4">
+                            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                            <span>Due Date: 28 Jun 2026</span>
+                          </div>
+
+                          {/* Sunflower Yellow Progress Bar */}
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between text-[11px] font-bold">
+                              <span className="text-slate-500">Progress</span>
+                              <span className="text-slate-800">55%</span>
+                            </div>
+                            <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                              <div className="h-full bg-gradient-to-r from-amber-400 to-yellow-500 rounded-full" style={{ width: '55%' }} />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-4 mt-3 border-t border-slate-50">
+                          <div className="flex items-center -space-x-1.5">
+                            <div className="w-6 h-6 rounded-full bg-indigo-400 border-2 border-white text-[9px] font-bold text-white flex items-center justify-center">US</div>
+                            <div className="w-6 h-6 rounded-full bg-rose-400 border-2 border-white text-[9px] font-bold text-white flex items-center justify-center">SH</div>
+                            <span className="pl-2.5 text-[10px] text-slate-400 font-medium">+12 others</span>
+                          </div>
+                          <div className="w-6 h-6 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-slate-100">
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+
+                  {/* ROW 3: "PROJECT TASKS" INTERACTIVE TIMELINE */}
+                  <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                      <h2 className="text-lg font-extrabold text-slate-900 tracking-tight">
+                        Project Tasks
+                      </h2>
+                      
+                      <div className="flex items-center space-x-3 text-xs">
+                        {/* Day / Week / Month / Year Switcher */}
+                        <div className="flex items-center space-x-2 border-r border-slate-200 pr-3 font-semibold text-slate-500">
+                          {(['Day', 'Week', 'Month', 'Year'] as const).map(tab => (
+                            <button
+                              key={tab}
+                              onClick={() => setTimelineTab(tab)}
+                              className={`transition pb-0.5 ${
+                                timelineTab === tab
+                                  ? 'text-blue-600 font-bold border-b-2 border-blue-600'
+                                  : 'hover:text-slate-800'
+                              }`}
+                            >
+                              {tab}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Filter & Sort Tools */}
+                        <div className="flex items-center space-x-2 text-slate-500">
+                          <button
+                            onClick={() => showToast('Filtered to active engineering deliverables.', 'success')}
+                            className="flex items-center space-x-1 hover:text-slate-800 transition"
+                          >
+                            <Filter className="w-3 h-3" />
+                            <span>Filter</span>
+                          </button>
+                          <button
+                            onClick={() => showToast('Sorted tasks by time sequence.', 'success')}
+                            className="flex items-center space-x-1 hover:text-slate-800 transition"
+                          >
+                            <SlidersHorizontal className="w-3 h-3" />
+                            <span>Sort</span>
+                          </button>
+                          <span className="font-bold text-slate-700 pl-2">
+                            24th, June 2026
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Horizontal Interactive Timeline Grid */}
+                    <div className="overflow-x-auto">
+                      <div className="min-w-[700px] relative">
+                        {/* Time Slots Header */}
+                        <div className="grid grid-cols-8 border-b border-slate-100 text-[11px] font-semibold text-slate-400 pb-2">
+                          <div>08:00</div>
+                          <div>09:00</div>
+                          <div>10:00</div>
+                          <div>11:00</div>
+                          <div>12:00</div>
+                          <div>01:00</div>
+                          <div>02:00</div>
+                          <div>03:00</div>
+                        </div>
+
+                        {/* Vertical Dashed Line for Current Time (12:00) */}
+                        <div
+                          className="absolute top-6 bottom-0 left-[50%] border-l-2 border-dashed border-indigo-300 z-10 pointer-events-none"
+                        >
+                          <span className="absolute -top-3.5 -left-10 text-[9px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-full border border-indigo-200">
+                            Current Time (12:00pm)
+                          </span>
+                        </div>
+
+                        {/* Floating Task Capsules */}
+                        <div className="py-4 space-y-3 relative">
+                          
+                          {/* Row 1 Tasks */}
+                          <div className="grid grid-cols-8 gap-2 items-center">
+                            {/* Task 1: Search inspiration (08:30am - 10:00am) */}
+                            <div
+                              onClick={() => {
+                                setSelectedTaskDetail(tasksList[0] || null);
+                                setCurrentView('task_detail');
+                              }}
+                              className="col-span-2 col-start-1 ml-6 bg-slate-50 hover:bg-blue-50/70 border border-slate-200/90 rounded-2xl p-2.5 shadow-xs flex items-center justify-between cursor-pointer transition"
+                            >
+                              <div className="flex items-center space-x-2">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                                <div>
+                                  <h5 className="font-bold text-[11px] text-slate-800 leading-tight">
+                                    Search inspiration
+                                  </h5>
+                                  <div className="flex items-center space-x-1 text-[10px] text-slate-400">
+                                    <span>08:30am - 10:00am</span>
+                                    <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="w-5 h-5 rounded-full bg-amber-400 text-[9px] font-bold text-amber-900 flex items-center justify-center">
+                                ZK
+                              </div>
+                            </div>
+
+                            {/* Task 4: Prototyping & Testing (12:45pm - 02:50pm) */}
+                            <div
+                              onClick={() => {
+                                setSelectedTaskDetail(tasksList[1] || null);
+                                setCurrentView('task_detail');
+                              }}
+                              className="col-span-3 col-start-5 ml-8 bg-slate-50 hover:bg-emerald-50/70 border border-slate-200/90 rounded-2xl p-2.5 shadow-xs flex items-center justify-between cursor-pointer transition"
+                            >
+                              <div className="flex items-center space-x-2">
+                                <span className="w-2 h-2 rounded-full bg-teal-500" />
+                                <div>
+                                  <h5 className="font-bold text-[11px] text-slate-800 leading-tight">
+                                    Prototyping & Testing
+                                  </h5>
+                                  <span className="text-[10px] text-slate-400 block">
+                                    12:45pm - 02:50pm
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex items-center -space-x-1">
+                                <div className="w-5 h-5 rounded-full bg-blue-400 text-[9px] font-bold text-white flex items-center justify-center">TA</div>
+                                <div className="w-5 h-5 rounded-full bg-purple-400 text-[9px] font-bold text-white flex items-center justify-center">NF</div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Row 2 Tasks */}
+                          <div className="grid grid-cols-8 gap-2 items-center">
+                            {/* Task 2: Define and Hypothesize (10:00am - 11:40pm) */}
+                            <div
+                              onClick={() => {
+                                setSelectedTaskDetail(tasksList[0] || null);
+                                setCurrentView('task_detail');
+                              }}
+                              className="col-span-2 col-start-3 ml-2 bg-slate-50 hover:bg-indigo-50/70 border border-slate-200/90 rounded-2xl p-2.5 shadow-xs flex items-center justify-between cursor-pointer transition"
+                            >
+                              <div>
+                                <h5 className="font-bold text-[11px] text-slate-800 leading-tight">
+                                  Define and Hypothesize
+                                </h5>
+                                <span className="text-[10px] text-slate-400 block">
+                                  10:00am - 11:40pm
+                                </span>
+                              </div>
+                              <div className="w-5 h-5 rounded-full bg-rose-400 text-[9px] font-bold text-white flex items-center justify-center">
+                                US
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Row 3 Tasks */}
+                          <div className="grid grid-cols-8 gap-2 items-center">
+                            {/* Task 3: Review (10:40am - 12:45pm) */}
+                            <div
+                              onClick={() => {
+                                setSelectedTaskDetail(tasksList[1] || null);
+                                setCurrentView('task_detail');
+                              }}
+                              className="col-span-2 col-start-4 ml-4 bg-slate-50 hover:bg-amber-50/70 border border-slate-200/90 rounded-2xl p-2.5 shadow-xs flex items-center justify-between cursor-pointer transition"
+                            >
+                              <div>
+                                <h5 className="font-bold text-[11px] text-slate-800 leading-tight">
+                                  Review & Sign-off
+                                </h5>
+                                <span className="text-[10px] text-slate-400 block">
+                                  10:40am - 12:45pm
+                                </span>
+                              </div>
+                              <div className="w-5 h-5 rounded-full bg-emerald-400 text-[9px] font-bold text-emerald-900 flex items-center justify-center">
+                                SH
+                              </div>
+                            </div>
+                          </div>
+
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* RIGHT COLUMN (COLUMNS 9 TO 12: WIDGETS PANEL) */}
+                <div className="xl:col-span-4 space-y-6">
+                  
+                  {/* WIDGET 1: SPEEDOMETER / PERSONAL TASK PROGRESS */}
+                  <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-4">
+                    <h3 className="font-extrabold text-base text-slate-900 tracking-tight">
+                      Personal Task progress
+                    </h3>
+
+                    {/* Semi-circular Speedometer Gauge SVG */}
+                    <div className="flex flex-col items-center justify-center pt-2">
+                      <div className="relative w-48 h-28 flex items-center justify-center">
+                        <svg viewBox="0 0 180 110" className="w-48 h-28 overflow-visible">
+                          {/* Background track arc */}
+                          <path
+                            d="M 20 100 A 70 70 0 0 1 160 100"
+                            fill="none"
+                            stroke="#f1f5f9"
+                            strokeWidth="14"
+                            strokeLinecap="round"
+                          />
+                          {/* Completed Arc (Emerald Green 35%) */}
+                          <path
+                            d="M 20 100 A 70 70 0 0 1 78 37"
+                            fill="none"
+                            stroke="#10b981"
+                            strokeWidth="14"
+                            strokeLinecap="round"
+                          />
+                          {/* Incomplete Arc (Coral Red 65%) */}
+                          <path
+                            d="M 98 33 A 70 70 0 0 1 160 100"
+                            fill="none"
+                            stroke="#f43f5e"
+                            strokeWidth="14"
+                            strokeLinecap="round"
+                          />
+                          {/* Needle / Center Indicator Hub */}
+                          <circle cx="90" cy="100" r="8" fill="#1e293b" />
+                          <circle cx="90" cy="100" r="3" fill="#ffffff" />
+                          {/* Pointer Line */}
+                          <line x1="90" y1="100" x2="88" y2="40" stroke="#1e293b" strokeWidth="2.5" strokeLinecap="round" />
+                        </svg>
+
+                        {/* Percentage Labels on the Gauge */}
+                        <span className="absolute bottom-1 left-2 text-xs font-bold text-slate-500">
+                          65%
+                        </span>
+                        <span className="absolute bottom-1 right-2 text-xs font-bold text-slate-500">
+                          35%
+                        </span>
+                      </div>
+
+                      {/* Counts Legend */}
+                      <div className="grid grid-cols-2 gap-4 w-full pt-4 mt-2 border-t border-slate-50 text-center">
+                        <div className="space-y-0.5">
+                          <div className="flex items-center justify-center space-x-1.5 text-xs text-slate-500">
+                            <span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />
+                            <span>Incomplete</span>
+                          </div>
+                          <span className="text-xl font-extrabold text-slate-900 font-mono block">
+                            03
+                          </span>
+                        </div>
+
+                        <div className="space-y-0.5">
+                          <div className="flex items-center justify-center space-x-1.5 text-xs text-slate-500">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                            <span>Completed</span>
+                          </div>
+                          <span className="text-xl font-extrabold text-slate-900 font-mono block">
+                            12
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          openDocTypeList('tab_task');
+                        }}
+                        className="mt-4 w-full py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-2xl transition border border-slate-200/60"
+                      >
+                        More info
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* WIDGET 2: QUICK CHAT AVATARS */}
+                  <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-extrabold text-base text-slate-900 tracking-tight">
+                        Quick Chat
+                      </h3>
+                      <button
+                        onClick={() => showToast('Opening direct team channel...', 'success')}
+                        className="text-xs font-bold text-blue-600 hover:text-blue-800 transition hover:underline"
+                      >
+                        See all
+                      </button>
+                    </div>
+
+                    {/* Row of 5 Circular Avatars */}
+                    <div className="flex items-center justify-between pt-1">
+                      {[
+                        { name: 'Lucky', sub: 'Zainab', color: 'from-amber-400 to-orange-500' },
+                        { name: 'Oscar', sub: 'Taha', color: 'from-blue-400 to-indigo-500' },
+                        { name: 'Jack', sub: 'Nouman', color: 'from-purple-400 to-pink-500' },
+                        { name: 'Neil', sub: 'Usman', color: 'from-emerald-400 to-teal-500' },
+                        { name: 'Stephen', sub: 'Bilal', color: 'from-rose-400 to-red-500' }
+                      ].map((contact, idx) => (
+                        <div
+                          key={idx}
+                          onClick={() => setQuickChatUser(contact)}
+                          className="flex flex-col items-center cursor-pointer group"
+                        >
+                          <div className="relative mb-1">
+                            <div className={`w-10 h-10 rounded-full bg-gradient-to-tr ${contact.color} p-0.5 shadow-sm transform group-hover:scale-105 transition`}>
+                              <div className="w-full h-full rounded-full bg-white flex items-center justify-center font-extrabold text-xs text-slate-700">
+                                {contact.name[0]}
+                              </div>
+                            </div>
+                            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
+                          </div>
+                          <span className="text-[10px] font-semibold text-slate-700 group-hover:text-blue-600 transition">
+                            {contact.name}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* WIDGET 3: TEAM ACTIVITIES & INTERACTIVE REACTIONS */}
+                  <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-extrabold text-base text-slate-900 tracking-tight">
+                        Team Activities
+                      </h3>
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200/60">
+                        New
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400">
+                      A new task has just been assigned to your team.
+                    </p>
+
+                    <div className="space-y-4 pt-1">
+                      {activitiesList.map(item => (
+                        <div key={item.id} className="flex items-start space-x-3 group">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-slate-200 to-slate-300 flex items-center justify-center font-bold text-xs text-slate-700 flex-shrink-0">
+                            {item.initials}
+                          </div>
+                          <div className="flex-1 space-y-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold text-slate-900">{item.user}</span>
+                              <span className="text-[10px] text-slate-400">{item.time}</span>
+                            </div>
+                            <p className="text-xs text-slate-600 leading-snug">
+                              {item.action}
+                            </p>
+                            
+                            {/* Interactive Reaction Pills */}
+                            <div className="flex items-center space-x-2 pt-1">
+                              <button
+                                onClick={() => handleToggleReaction(item.id, 'like')}
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-semibold flex items-center space-x-1 border transition ${
+                                  item.userLiked
+                                    ? 'bg-rose-50 text-rose-600 border-rose-200'
+                                    : 'bg-slate-50 text-slate-500 border-slate-200/60 hover:bg-rose-50 hover:text-rose-600'
+                                }`}
+                              >
+                                <span>❤️</span>
+                                <span>{item.likes}</span>
+                              </button>
+                              <button
+                                onClick={() => handleToggleReaction(item.id, 'thumb')}
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-semibold flex items-center space-x-1 border transition ${
+                                  item.userThumbed
+                                    ? 'bg-blue-50 text-blue-600 border-blue-200'
+                                    : 'bg-slate-50 text-slate-500 border-slate-200/60 hover:bg-blue-50 hover:text-blue-600'
+                                }`}
+                              >
+                                <span>👍</span>
+                                <span>{item.thumbs}</span>
+                              </button>
+                              <span className="text-xs">😄</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* Number Cards Metric Grid */}
+              <div className="pt-4 border-t border-slate-100">
+                <div className="text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-3">
+                  Facility Operating Telemetry
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {workspaceData?.workspaces
+                    .find((w: any) => w.id === activeWorkspace)
+                    ?.numberCards.map((card: any, idx: number) => (
+                      <div
+                        key={idx}
+                        className="bg-white border border-slate-100 rounded-3xl p-4 shadow-xs hover:shadow-sm transition"
+                      >
+                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                          {card.label}
+                        </span>
+                        <span className="text-xl font-black text-slate-900 font-mono block">
+                          {card.value}
+                        </span>
+                      </div>
+                    ))}
+                </div>
               </div>
 
               {/* =========================================================================
                   EXECUTIVE WORKSPACE: HIGH-DENSITY ZERO-SCROLL 6-TILE COCKPIT
                   ========================================================================= */}
               {activeWorkspace === 'executive' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
                   {/* TILE 1: Mission-Critical Tasks & Schedule (WBS Pulse) */}
-                  <div className="bg-white border border-gray-200/90 rounded-xl p-4 shadow-xs flex flex-col justify-between space-y-3 hover:border-blue-200 transition">
+                  <div className="bg-white border border-slate-100 rounded-3xl p-5 shadow-xs flex flex-col justify-between space-y-3 hover:border-blue-200 transition">
                     <div className="flex items-center justify-between border-b border-gray-100 pb-2.5">
                       <div className="flex items-center space-x-2">
                         <div className="p-1.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-100">
@@ -3369,9 +4237,90 @@ export default function App() {
       </div>
 
       {/* =========================================================================
-          MODALS SECTION (TASK CREATION WITH PHASES, EQUIPMENT APPLICATION,
+          MODALS SECTION (QUICK CHAT, TASK CREATION WITH PHASES, EQUIPMENT APPLICATION,
           COMPONENT STOCK, UTILITY BILL UPDATE, EMPLOYEE CREATION)
           ========================================================================= */}
+
+      {/* QUICK CHAT MODAL DRAWER */}
+      {quickChatUser && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-md overflow-hidden flex flex-col h-[520px] animate-in fade-in zoom-in-95 duration-150">
+            {/* Header */}
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center space-x-3">
+                <div className="relative">
+                  <div className={`w-10 h-10 rounded-full bg-gradient-to-tr ${quickChatUser.color || 'from-blue-600 to-indigo-600'} p-0.5 shadow-sm`}>
+                    <div className="w-full h-full rounded-full bg-white flex items-center justify-center font-extrabold text-xs text-slate-700">
+                      {quickChatUser.name[0]}
+                    </div>
+                  </div>
+                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm text-slate-900 leading-tight">
+                    {quickChatUser.name}
+                  </h3>
+                  <span className="text-[10px] text-emerald-600 font-bold block">
+                    Online • {quickChatUser.sub || 'Defense Systems Lead'}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setQuickChatUser(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Conversation Messages */}
+            <div className="flex-1 p-4 space-y-3 overflow-y-auto bg-slate-50/40">
+              <div className="text-center my-1">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-white px-3 py-1 rounded-full border border-slate-100 shadow-2xs">
+                  Cleanroom Encrypted Channel
+                </span>
+              </div>
+              {chatMessages.map((msg, i) => (
+                <div
+                  key={i}
+                  className={`flex flex-col ${msg.sender === 'You' ? 'items-end' : 'items-start'}`}
+                >
+                  <div
+                    className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-xs ${
+                      msg.sender === 'You'
+                        ? 'bg-[#3949f5] text-white rounded-br-xs shadow-sm shadow-blue-500/20'
+                        : 'bg-white text-slate-800 border border-slate-200/80 rounded-bl-xs shadow-2xs'
+                    }`}
+                  >
+                    <p className="leading-relaxed">{msg.text}</p>
+                  </div>
+                  <span className="text-[9px] text-slate-400 mt-1 px-1">
+                    {msg.time}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Message Input Box */}
+            <form onSubmit={handleSendChatMessage} className="p-3 border-t border-slate-100 bg-white flex items-center space-x-2">
+              <input
+                type="text"
+                placeholder={`Message ${quickChatUser.name}...`}
+                value={chatMessageText}
+                onChange={(e) => setChatMessageText(e.target.value)}
+                className="flex-1 bg-slate-100/80 hover:bg-slate-100 focus:bg-white text-xs px-4 py-2.5 rounded-full border border-transparent focus:border-blue-500 focus:outline-none transition"
+              />
+              <button
+                type="submit"
+                disabled={!chatMessageText.trim()}
+                className="bg-[#3949f5] hover:bg-blue-700 disabled:opacity-40 text-white p-2.5 rounded-full shadow-sm transition active:scale-95 flex-shrink-0"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* 1. APPLY FOR EQUIPMENT MODAL (WITH LIVE AVAILABILITY CHECK & WARNING) */}
       {showModal === 'apply_asset' && (
